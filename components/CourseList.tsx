@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CourseShape } from '../lib/types/course';
 import { CourseCard } from './CourseCard';
 
@@ -7,9 +7,10 @@ interface Props {
     onAddCourse: () => void;
     onUpdateCourse: (courseId: string, course: CourseShape) => void;
     onDeleteCourse: (courseId: string) => void;
+    lastAddedCourseId: string | null;
 }
 
-export function CourseList({ courses, onAddCourse, onUpdateCourse, onDeleteCourse }: Props) {
+export function CourseList({ courses, onAddCourse, onUpdateCourse, onDeleteCourse, lastAddedCourseId }: Props) {
     return (
         <div className="course-list">
             <button onClick={onAddCourse} className="add-btn">+ Add Course</button>
@@ -20,6 +21,7 @@ export function CourseList({ courses, onAddCourse, onUpdateCourse, onDeleteCours
                     course={course}
                     onUpdate={updated => onUpdateCourse(course.id, updated)}
                     onDelete={() => onDeleteCourse(course.id)}
+                    autoFocus={course.id === lastAddedCourseId}
                 />
             ))}
         </div>

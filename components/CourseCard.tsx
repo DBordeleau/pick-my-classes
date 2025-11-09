@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { CourseShape, CourseSection } from '../lib/types/course';
 import { SectionList } from './SectionList';
 import { Tooltip } from './Tooltip';
@@ -7,6 +7,7 @@ interface Props {
     course: CourseShape;
     onUpdate: (course: CourseShape) => void;
     onDelete: () => void;
+    autoFocus?: boolean;
 }
 
 // Helper to convert 0 -> A, 1 -> B, ..., 25 -> Z, 26 -> AA, etc. Used for section suffixes
@@ -38,7 +39,17 @@ function nextSuffixFromExisting(sections: CourseSection[]): string {
     return numberToLetters(max + 1);
 }
 
-export function CourseCard({ course, onUpdate, onDelete }: Props) {
+export function CourseCard({ course, onUpdate, onDelete, autoFocus = false }: Props) {
+    const nameInputRef = useRef<HTMLInputElement>(null);
+    const [lastAddedSectionId, setLastAddedSectionId] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (autoFocus && nameInputRef.current) {
+            nameInputRef.current.focus();
+            nameInputRef.current.select();
+        }
+    }, [autoFocus]);
+
     const handleAddSection = () => {
         const suffix = nextSuffixFromExisting(course.sections || []);
         const newSection: CourseSection = {
@@ -49,19 +60,20 @@ export function CourseCard({ course, onUpdate, onDelete }: Props) {
             suffix
         };
         onUpdate({ ...course, sections: [...(course.sections || []), newSection] });
+        setLastAddedSectionId(newSection.id);
     };
 
     const handleUpdateSection = (sectionId: string, updated: CourseSection) => {
         onUpdate({
             ...course,
-            sections: course.sections.map(s => s.id === sectionId ? updated : s)
+            sections: (course.sections || []).map(s => s.id === sectionId ? updated : s)
         });
     };
 
     const handleDeleteSection = (sectionId: string) => {
         onUpdate({
             ...course,
-            sections: course.sections.filter(s => s.id !== sectionId)
+            sections: (course.sections || []).filter(s => s.id !== sectionId)
         });
     };
 
@@ -69,6 +81,7 @@ export function CourseCard({ course, onUpdate, onDelete }: Props) {
         <div className="course-card">
             <div className="course-header">
                 <input
+                    ref={nameInputRef}
                     type="text"
                     value={course.name || ''}
                     onChange={e => onUpdate({ ...course, name: e.target.value })}
@@ -92,6 +105,7 @@ export function CourseCard({ course, onUpdate, onDelete }: Props) {
                 onAddSection={handleAddSection}
                 onUpdateSection={handleUpdateSection}
                 onDeleteSection={handleDeleteSection}
+                lastAddedSectionId={lastAddedSectionId}
             />
         </div>
     );

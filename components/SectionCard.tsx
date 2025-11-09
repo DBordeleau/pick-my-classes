@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CourseSection, TutorialSection } from '../lib/types/course';
 import { TimeslotEditor } from './TimeslotEditor';
 import { TutorialList } from './TutorialList';
@@ -9,9 +9,13 @@ interface Props {
     sectionNumber: number;
     onUpdate: (section: CourseSection) => void;
     onDelete: () => void;
+    autoFocus?: boolean;
 }
 
-export function SectionCard({ courseName, section, onUpdate, onDelete }: Props) {
+export function SectionCard({ courseName, section, onUpdate, onDelete, autoFocus = false }: Props) {
+    const suffixInputRef = useRef<HTMLInputElement>(null);
+    const [lastAddedTutorialId, setLastAddedTutorialId] = useState<string | null>(null);
+
     const handleAddTutorial = () => {
         const sectionSuffix = section.suffix ?? '';
         const displaySuffix = sectionSuffix || 'A';
@@ -26,15 +30,22 @@ export function SectionCard({ courseName, section, onUpdate, onDelete }: Props) 
             hasTutorial: true,
             tutorials: [...(section.tutorials || []), newTutorial]
         });
+        setLastAddedTutorialId(newTutorial.id);
     };
 
     // Local input state so the user can clear/backspace
     const [suffixInput, setSuffixInput] = useState<string>(section.suffix ?? '');
 
-    // Keep local input in sync if parent updates the section.suffix externally
     useEffect(() => {
         setSuffixInput(section.suffix ?? '');
     }, [section.suffix, section.id]);
+
+    useEffect(() => {
+        if (autoFocus && suffixInputRef.current) {
+            suffixInputRef.current.focus();
+            suffixInputRef.current.select();
+        }
+    }, [autoFocus]);
 
     // Allow empty string; sanitize letters only and uppercase, limit length
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,7 +63,6 @@ export function SectionCard({ courseName, section, onUpdate, onDelete }: Props) 
             (e.target as HTMLInputElement).blur();
         }
         if (e.key === 'Escape') {
-            // Revert local input to parent's value
             setSuffixInput(section.suffix ?? '');
             (e.target as HTMLInputElement).blur();
         }
@@ -67,6 +77,7 @@ export function SectionCard({ courseName, section, onUpdate, onDelete }: Props) 
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: 0, margin: 0 }}>
                         <span>{courseName}-</span>
                         <input
+                            ref={suffixInputRef}
                             aria-label="Section suffix"
                             value={displaySuffix}
                             onChange={handleInputChange}
@@ -119,6 +130,7 @@ export function SectionCard({ courseName, section, onUpdate, onDelete }: Props) 
                         ...section,
                         tutorials: (section.tutorials || []).filter(t => t.id !== tutId)
                     })}
+                    lastAddedTutorialId={lastAddedTutorialId}
                 />
             )}
         </div>

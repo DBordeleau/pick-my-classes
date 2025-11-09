@@ -8,14 +8,18 @@ export function TimetableBuilder() {
     const [groups, setGroups] = useState<CourseGroup[]>([]);
     const [globalConstraints, setGlobalConstraints] = useState<GlobalConstraints>({});
     const [results, setResults] = useState<TimetableConfiguration[]>([]);
+    const [lastAddedGroupId, setLastAddedGroupId] = useState<string | null>(null);
 
     const handleAddGroup = () => {
         const newGroup: CourseGroup = {
             id: `group-${Date.now()}`,
-            name: `Group ${groups.length + 1}`,
-            courses: []
+            name: '',
+            courses: [],
+            minSelect: undefined,
+            maxSelect: undefined
         };
         setGroups([...groups, newGroup]);
+        setLastAddedGroupId(newGroup.id);
     };
 
     const handleUpdateGroup = (groupId: string, updated: CourseGroup) => {
@@ -46,6 +50,8 @@ export function TimetableBuilder() {
                 onAddGroup={handleAddGroup}
                 onUpdateGroup={handleUpdateGroup}
                 onDeleteGroup={handleDeleteGroup}
+                globalMaxCourses={globalConstraints.maxCourses ?? 5}
+                lastAddedGroupId={lastAddedGroupId}
             />
 
             <button onClick={handleGenerate} className="generate-btn">
@@ -55,7 +61,6 @@ export function TimetableBuilder() {
             {results.length > 0 && (
                 <div className="results">
                     <h2>Found {results.length} valid timetables</h2>
-                    {/* Render results here */}
                 </div>
             )}
         </div>

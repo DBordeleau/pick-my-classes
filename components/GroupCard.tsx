@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { CourseGroup, CourseShape } from '../lib/types/course';
 import { CourseList } from './CourseList';
 import { Tooltip } from './Tooltip';
@@ -8,17 +8,29 @@ interface Props {
     onUpdate: (group: CourseGroup) => void;
     onDelete: () => void;
     globalMaxCourses?: number;
+    autoFocus?: boolean;
 }
 
-export function GroupCard({ group, onUpdate, onDelete, globalMaxCourses = 5 }: Props) {
+export function GroupCard({ group, onUpdate, onDelete, globalMaxCourses = 5, autoFocus = false }: Props) {
+    const nameInputRef = useRef<HTMLInputElement>(null);
+    const [lastAddedCourseId, setLastAddedCourseId] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (autoFocus && nameInputRef.current) {
+            nameInputRef.current.focus();
+            nameInputRef.current.select();
+        }
+    }, [autoFocus]);
+
     const handleAddCourse = () => {
         const newCourse: CourseShape = {
             id: `course-${Date.now()}`,
-            name: `Course ${group.courses.length + 1}`,
+            name: '',
             sections: [],
             required: false
         };
         onUpdate({ ...group, courses: [...group.courses, newCourse] });
+        setLastAddedCourseId(newCourse.id);
     };
 
     const handleUpdateCourse = (courseId: string, updated: CourseShape) => {
@@ -39,6 +51,7 @@ export function GroupCard({ group, onUpdate, onDelete, globalMaxCourses = 5 }: P
         <div className="group-card">
             <div className="group-header">
                 <input
+                    ref={nameInputRef}
                     type="text"
                     value={group.name || ''}
                     onChange={e => onUpdate({ ...group, name: e.target.value })}
@@ -78,6 +91,7 @@ export function GroupCard({ group, onUpdate, onDelete, globalMaxCourses = 5 }: P
                 onAddCourse={handleAddCourse}
                 onUpdateCourse={handleUpdateCourse}
                 onDeleteCourse={handleDeleteCourse}
+                lastAddedCourseId={lastAddedCourseId}
             />
         </div>
     );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CourseGroup } from '../lib/types/course';
 import { GroupCard } from './GroupCard';
 import { Tooltip } from './Tooltip';
@@ -8,9 +8,11 @@ interface Props {
     onAddGroup: () => void;
     onUpdateGroup: (groupId: string, group: CourseGroup) => void;
     onDeleteGroup: (groupId: string) => void;
+    globalMaxCourses?: number;
+    lastAddedGroupId: string | null;
 }
 
-export function GroupList({ groups, onAddGroup, onUpdateGroup, onDeleteGroup }: Props) {
+export function GroupList({ groups, onAddGroup, onUpdateGroup, onDeleteGroup, globalMaxCourses = 5, lastAddedGroupId }: Props) {
     return (
         <div className="group-list">
             <div className="group-list-header">
@@ -27,6 +29,8 @@ export function GroupList({ groups, onAddGroup, onUpdateGroup, onDeleteGroup }: 
                         group={group}
                         onUpdate={updated => onUpdateGroup(group.id, updated)}
                         onDelete={() => onDeleteGroup(group.id)}
+                        globalMaxCourses={globalMaxCourses}
+                        autoFocus={group.id === lastAddedGroupId}
                     />
                 ))
             )}
