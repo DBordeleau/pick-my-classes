@@ -4,20 +4,22 @@ import { SectionCard } from './SectionCard';
 import { Tooltip } from './Tooltip';
 
 interface Props {
+    courseName: string;
     sections: CourseSection[];
     onAddSection: () => void;
     onUpdateSection: (sectionId: string, section: CourseSection) => void;
     onDeleteSection: (sectionId: string) => void;
 }
 
-export function SectionList({ sections, onAddSection, onUpdateSection, onDeleteSection }: Props) {
+export function SectionList({ courseName, sections, onAddSection, onUpdateSection, onDeleteSection }: Props) {
     return (
         <div className="section-list">
-            <Tooltip text="Add every section you are willing to enroll in for this course. The timetable generator will select only one for each generated timetable." /><button onClick={onAddSection} className="add-btn-small">+ Add Section</button>
+            <button onClick={onAddSection} className="add-btn-small">+ Add Section</button>
 
             {sections.map((section, index) => (
                 <SectionCard
                     key={section.id}
+                    courseName={courseName}
                     section={section}
                     sectionNumber={index + 1}
                     onUpdate={updated => onUpdateSection(section.id, updated)}

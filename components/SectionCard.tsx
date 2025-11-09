@@ -1,32 +1,89 @@
-import React from 'react';
-import { CourseSection, TutorialSection, Day } from '../lib/types/course';
+import React, { useState, useEffect } from 'react';
+import { CourseSection, TutorialSection } from '../lib/types/course';
 import { TimeslotEditor } from './TimeslotEditor';
 import { TutorialList } from './TutorialList';
 
 interface Props {
+    courseName: string;
     section: CourseSection;
     sectionNumber: number;
     onUpdate: (section: CourseSection) => void;
     onDelete: () => void;
 }
 
-export function SectionCard({ section, sectionNumber, onUpdate, onDelete }: Props) {
+export function SectionCard({ courseName, section, onUpdate, onDelete }: Props) {
     const handleAddTutorial = () => {
+        const sectionSuffix = section.suffix ?? '';
+        const displaySuffix = sectionSuffix || 'A';
+        const sectionDisplayName = `${courseName}-${displaySuffix}`;
         const newTutorial: TutorialSection = {
             id: `tutorial-${Date.now()}`,
-            times: { days: [], startTime: 0, endTime: 0 }
+            times: { days: [], startTime: 0, endTime: 0 },
+            name: `${sectionDisplayName} Tutorial`
         };
         onUpdate({
             ...section,
             hasTutorial: true,
-            tutorials: [...section.tutorials, newTutorial]
+            tutorials: [...(section.tutorials || []), newTutorial]
         });
     };
+
+    // Local input state so the user can clear/backspace
+    const [suffixInput, setSuffixInput] = useState<string>(section.suffix ?? '');
+
+    // Keep local input in sync if parent updates the section.suffix externally
+    useEffect(() => {
+        setSuffixInput(section.suffix ?? '');
+    }, [section.suffix, section.id]);
+
+    // Allow empty string; sanitize letters only and uppercase, limit length
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const cleaned = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+        setSuffixInput(cleaned);
+    };
+
+    const commitSuffix = () => {
+        const newSuffix = suffixInput === '' ? undefined : suffixInput;
+        onUpdate({ ...section, suffix: newSuffix });
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            (e.target as HTMLInputElement).blur();
+        }
+        if (e.key === 'Escape') {
+            // Revert local input to parent's value
+            setSuffixInput(section.suffix ?? '');
+            (e.target as HTMLInputElement).blur();
+        }
+    };
+
+    const displaySuffix = suffixInput; // local state drives the input
 
     return (
         <div className="section-card">
             <div className="section-header">
-                <h4>Section {sectionNumber}</h4>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: 0, margin: 0 }}>
+                        <span>{courseName}-</span>
+                        <input
+                            aria-label="Section suffix"
+                            value={displaySuffix}
+                            onChange={handleInputChange}
+                            onBlur={commitSuffix}
+                            onKeyDown={handleKeyDown}
+                            style={{
+                                width: 40,
+                                textTransform: 'uppercase',
+                                textAlign: 'center',
+                                fontWeight: 600,
+                                borderRadius: 4,
+                                border: '1px solid #d1d5db',
+                                background: 'white'
+                            }}
+                        />
+                    </h4>
+                </div>
                 <button onClick={onDelete} className="delete-btn-small">×</button>
             </div>
 
@@ -39,7 +96,7 @@ export function SectionCard({ section, sectionNumber, onUpdate, onDelete }: Prop
             <label className="tutorial-checkbox">
                 <input
                     type="checkbox"
-                    checked={section.hasTutorial}
+                    checked={!!section.hasTutorial}
                     onChange={e => onUpdate({
                         ...section,
                         hasTutorial: e.target.checked,
@@ -51,15 +108,16 @@ export function SectionCard({ section, sectionNumber, onUpdate, onDelete }: Prop
 
             {section.hasTutorial && (
                 <TutorialList
-                    tutorials={section.tutorials}
+                    parentName={`${courseName}-${section.suffix ?? 'A'}`}
+                    tutorials={section.tutorials || []}
                     onAddTutorial={handleAddTutorial}
                     onUpdateTutorial={(tutId, updated) => onUpdate({
                         ...section,
-                        tutorials: section.tutorials.map(t => t.id === tutId ? updated : t)
+                        tutorials: (section.tutorials || []).map(t => t.id === tutId ? updated : t)
                     })}
                     onDeleteTutorial={tutId => onUpdate({
                         ...section,
-                        tutorials: section.tutorials.filter(t => t.id !== tutId)
+                        tutorials: (section.tutorials || []).filter(t => t.id !== tutId)
                     })}
                 />
             )}

@@ -9,15 +9,46 @@ interface Props {
     onDelete: () => void;
 }
 
+// Helper to convert 0 -> A, 1 -> B, ..., 25 -> Z, 26 -> AA, etc. Used for section suffixes
+function numberToLetters(n: number): string {
+    let s = '';
+    n += 1;
+    while (n > 0) {
+        const rem = (n - 1) % 26;
+        s = String.fromCharCode(65 + rem) + s;
+        n = Math.floor((n - 1) / 26);
+    }
+    return s;
+}
+
+// Get the next available suffix based on the length of existing sections
+function nextSuffixFromExisting(sections: CourseSection[]): string {
+    if (!sections || sections.length === 0) return 'A';
+    const indexes = sections
+        .map(s => (s.suffix || '').toUpperCase())
+        .filter(Boolean)
+        .map(suf => {
+            let val = 0;
+            for (let i = 0; i < suf.length; i++) {
+                val = val * 26 + (suf.charCodeAt(i) - 65 + 1);
+            }
+            return val - 1;
+        });
+    const max = indexes.length ? Math.max(...indexes) : -1;
+    return numberToLetters(max + 1);
+}
+
 export function CourseCard({ course, onUpdate, onDelete }: Props) {
     const handleAddSection = () => {
+        const suffix = nextSuffixFromExisting(course.sections || []);
         const newSection: CourseSection = {
             id: `section-${Date.now()}`,
             times: { days: [], startTime: 0, endTime: 0 },
             hasTutorial: false,
-            tutorials: []
+            tutorials: [],
+            suffix
         };
-        onUpdate({ ...course, sections: [...course.sections, newSection] });
+        onUpdate({ ...course, sections: [...(course.sections || []), newSection] });
     };
 
     const handleUpdateSection = (sectionId: string, updated: CourseSection) => {
@@ -47,7 +78,7 @@ export function CourseCard({ course, onUpdate, onDelete }: Props) {
                 <label className="required-checkbox">
                     <input
                         type="checkbox"
-                        checked={course.required}
+                        checked={!!course.required}
                         onChange={e => onUpdate({ ...course, required: e.target.checked })}
                     />
                     <Tooltip text="Include this course in every timetable." />Required
@@ -56,7 +87,8 @@ export function CourseCard({ course, onUpdate, onDelete }: Props) {
             </div>
 
             <SectionList
-                sections={course.sections}
+                courseName={course.name || course.id}
+                sections={course.sections || []}
                 onAddSection={handleAddSection}
                 onUpdateSection={handleUpdateSection}
                 onDeleteSection={handleDeleteSection}

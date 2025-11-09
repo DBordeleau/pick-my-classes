@@ -11,6 +11,7 @@ export interface TimeSlot {
 export interface TutorialSection {
     id: string;
     times: TimeSlot;
+    name?: string;
 }
 
 export interface CourseSection {
@@ -18,6 +19,7 @@ export interface CourseSection {
     times: TimeSlot;
     hasTutorial: boolean;  // if true, student MUST pick one tutorial
     tutorials: TutorialSection[];  // empty if hasTutorial is false
+    suffix?: string;
 }
 
 export interface CourseGroup {
