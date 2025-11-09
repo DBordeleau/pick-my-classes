@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CourseSection, TutorialSection } from '../lib/types/course';
+import { CourseSection, TutorialSection, Day } from '../lib/types/course';
 import { TimeslotEditor } from './TimeslotEditor';
 import { TutorialList } from './TutorialList';
 
@@ -75,9 +75,15 @@ export function SectionCard({ courseName, section, onUpdate, onDelete, autoFocus
         return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     };
 
+    const sortDays = (days: Day[]): Day[] => {
+        const dayOrder: Day[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        return [...days].sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
+    };
+
     const formatSectionInfo = (): string => {
         const times = section.times;
-        const daysStr = times.days.length > 0 ? times.days.join('/') : 'No days';
+        const sortedDays = sortDays(times.days);
+        const daysStr = sortedDays.length > 0 ? sortedDays.join('/') : 'No days';
         const timeStr = times.startTime !== undefined && times.endTime !== undefined
             ? `${formatTime(times.startTime)}-${formatTime(times.endTime)}`
             : 'No time';
@@ -86,7 +92,8 @@ export function SectionCard({ courseName, section, onUpdate, onDelete, autoFocus
 
         if (section.hasTutorial && section.tutorials.length > 0) {
             const tutorial = section.tutorials[0];
-            const tutDays = tutorial.times.days.join('/') || 'No days';
+            const sortedTutDays = sortDays(tutorial.times.days);
+            const tutDays = sortedTutDays.length > 0 ? sortedTutDays.join('/') : 'No days';
             const tutTime = tutorial.times.startTime !== undefined
                 ? formatTime(tutorial.times.startTime)
                 : 'No time';
