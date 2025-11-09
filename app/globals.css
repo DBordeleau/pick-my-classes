@@ -356,6 +356,21 @@ body {
   padding: 0.375rem 0.75rem;
 }
 
+/* Section add button - orange to match section cards */
+.section-list>.add-btn-small {
+  background: #f59e0b;
+}
+
+.section-list>.add-btn-small:hover {
+  background: #d97706;
+}
+
+.delete-btn,
+.delete-btn-small {
+  background: #ef4444;
+  color: white;
+}
+
 .delete-btn,
 .delete-btn-small {
   background: #ef4444;
@@ -618,4 +633,78 @@ body {
 .day-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Save and Edit Buttons */
+.save-btn {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  margin-top: 1rem;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #10b981;
+}
+
+.save-btn:hover {
+  background: #059669;
+}
+
+/* Section save button - orange */
+.section-card>.save-btn {
+  background: #f59e0b;
+}
+
+.section-card>.save-btn:hover {
+  background: #d97706;
+}
+
+/* Course save button - green (explicit) */
+.course-card>.save-btn {
+  background: #10b981;
+}
+
+.course-card>.save-btn:hover {
+  background: #059669;
+}
+
+.edit-btn,
+.edit-btn-small {
+  padding: 0.5rem 1rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-btn:hover,
+.edit-btn-small:hover {
+  background: #2563eb;
+}
+
+.edit-btn-small {
+  font-size: 0.875rem;
+  padding: 0.375rem 0.75rem;
+}
+
+/* Collapsed Card States */
+.section-card-collapsed,
+.course-card-collapsed {
+  padding: 1rem;
+}
+
+.section-card-collapsed {
+  background: #f3f4f6;
+  border-left-color: #9ca3af;
+}
+
+.course-card-collapsed {
+  background: #f9fafb;
+  border-left-color: #9ca3af;
 }

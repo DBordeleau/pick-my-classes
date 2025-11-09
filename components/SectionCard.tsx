@@ -15,6 +15,7 @@ interface Props {
 export function SectionCard({ courseName, section, onUpdate, onDelete, autoFocus = false }: Props) {
     const suffixInputRef = useRef<HTMLInputElement>(null);
     const [lastAddedTutorialId, setLastAddedTutorialId] = useState<string | null>(null);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const handleAddTutorial = () => {
         const sectionSuffix = section.suffix ?? '';
@@ -68,7 +69,56 @@ export function SectionCard({ courseName, section, onUpdate, onDelete, autoFocus
         }
     };
 
-    const displaySuffix = suffixInput; // local state drives the input
+    const formatTime = (minutes: number): string => {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    };
+
+    const formatSectionInfo = (): string => {
+        const times = section.times;
+        const daysStr = times.days.length > 0 ? times.days.join('/') : 'No days';
+        const timeStr = times.startTime !== undefined && times.endTime !== undefined
+            ? `${formatTime(times.startTime)}-${formatTime(times.endTime)}`
+            : 'No time';
+
+        let info = `${daysStr} @ ${timeStr}`;
+
+        if (section.hasTutorial && section.tutorials.length > 0) {
+            const tutorial = section.tutorials[0];
+            const tutDays = tutorial.times.days.join('/') || 'No days';
+            const tutTime = tutorial.times.startTime !== undefined
+                ? formatTime(tutorial.times.startTime)
+                : 'No time';
+            info += ` - Tutorial: ${tutDays} @ ${tutTime}`;
+        } else {
+            info += ' - No tutorial';
+        }
+
+        return info;
+    };
+
+    const displaySuffix = suffixInput;
+    const sectionDisplayName = `${courseName}-${section.suffix ?? displaySuffix}`;
+
+    if (isCollapsed) {
+        return (
+            <div className="section-card section-card-collapsed">
+                <div className="section-header">
+                    <div>
+                        <h4 style={{ margin: 0, fontWeight: 600, marginBottom: '0.25rem' }}>{sectionDisplayName}</h4>
+                        <p style={{ margin: 0, fontSize: '0.875rem', color: '#6b7280' }}>
+                            {formatSectionInfo()}
+                        </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button onClick={() => setIsCollapsed(false)} className="edit-btn-small">Edit</button>
+                        <button onClick={onDelete} className="delete-btn-small">×</button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="section-card">
@@ -133,6 +183,10 @@ export function SectionCard({ courseName, section, onUpdate, onDelete, autoFocus
                     lastAddedTutorialId={lastAddedTutorialId}
                 />
             )}
+
+            <button onClick={() => setIsCollapsed(true)} className="save-btn">
+                Save Section
+            </button>
         </div>
     );
 }

@@ -42,6 +42,7 @@ function nextSuffixFromExisting(sections: CourseSection[]): string {
 export function CourseCard({ course, onUpdate, onDelete, autoFocus = false }: Props) {
     const nameInputRef = useRef<HTMLInputElement>(null);
     const [lastAddedSectionId, setLastAddedSectionId] = useState<string | null>(null);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     useEffect(() => {
         if (autoFocus && nameInputRef.current) {
@@ -77,6 +78,26 @@ export function CourseCard({ course, onUpdate, onDelete, autoFocus = false }: Pr
         });
     };
 
+    if (isCollapsed) {
+        return (
+            <div className="course-card course-card-collapsed">
+                <div className="course-header">
+                    <h3 style={{ margin: 0, fontWeight: 600 }}>
+                        {course.name || 'Unnamed Course'}
+                        {course.required && <span style={{ color: '#ef4444', marginLeft: '0.5rem' }}>*</span>}
+                    </h3>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                            {course.sections?.length || 0} section{course.sections?.length !== 1 ? 's' : ''}
+                        </span>
+                        <button onClick={() => setIsCollapsed(false)} className="edit-btn">Edit</button>
+                        <button onClick={onDelete} className="delete-btn">Delete</button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="course-card">
             <div className="course-header">
@@ -107,6 +128,10 @@ export function CourseCard({ course, onUpdate, onDelete, autoFocus = false }: Pr
                 onDeleteSection={handleDeleteSection}
                 lastAddedSectionId={lastAddedSectionId}
             />
+
+            <button onClick={() => setIsCollapsed(true)} className="save-btn">
+                Save Course
+            </button>
         </div>
     );
 }

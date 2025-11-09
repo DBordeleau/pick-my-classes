@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CourseSection } from '../lib/types/course';
 import { SectionCard } from './SectionCard';
 
@@ -14,8 +14,6 @@ interface Props {
 export function SectionList({ courseName, sections, onAddSection, onUpdateSection, onDeleteSection, lastAddedSectionId }: Props) {
     return (
         <div className="section-list">
-            <button onClick={onAddSection} className="add-btn-small">+ Add Section</button>
-
             {sections.map((section, index) => (
                 <SectionCard
                     key={section.id}
@@ -27,6 +25,8 @@ export function SectionList({ courseName, sections, onAddSection, onUpdateSectio
                     autoFocus={section.id === lastAddedSectionId}
                 />
             ))}
+
+            <button onClick={onAddSection} className="add-btn-small">+ Add Section</button>
         </div>
     );
 }
