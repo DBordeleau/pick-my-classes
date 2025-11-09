@@ -34,6 +34,24 @@ export function BlockedTimeslotEditor({ blockedSlot, onChange, onDelete }: Props
         return h * 60 + m;
     };
 
+    const handleTypeChange = (newType: BlockedTimeslotType) => {
+        const updated: BlockedTimeslot = { ...blockedSlot, type: newType };
+
+        // Set appropriate default times based on type
+        if (newType === 'before') {
+            updated.startTime = undefined;
+            updated.endTime = 540; // 9:00 AM
+        } else if (newType === 'between') {
+            updated.startTime = 600; // 10:00 AM
+            updated.endTime = 780; // 1:00 PM
+        } else if (newType === 'after') {
+            updated.startTime = 1080; // 6:00 PM
+            updated.endTime = undefined;
+        }
+
+        onChange(updated);
+    };
+
     const hasSpecificDays = blockedSlot.days && blockedSlot.days.length > 0;
     const isAnyDay = !hasSpecificDays;
 
@@ -66,7 +84,7 @@ export function BlockedTimeslotEditor({ blockedSlot, onChange, onDelete }: Props
             <div className="blocked-timeslot-header">
                 <select
                     value={blockedSlot.type}
-                    onChange={e => onChange({ ...blockedSlot, type: e.target.value as BlockedTimeslotType })}
+                    onChange={e => handleTypeChange(e.target.value as BlockedTimeslotType)}
                     className="blocked-type-select"
                 >
                     <option value="before">Before</option>
@@ -101,18 +119,18 @@ export function BlockedTimeslotEditor({ blockedSlot, onChange, onDelete }: Props
                             </span>
                             <input
                                 type="time"
-                                value={formatTime(blockedSlot.startTime ?? 540)}
+                                value={formatTime(blockedSlot.startTime ?? 600)}
                                 onChange={e => onChange({ ...blockedSlot, startTime: parseTime(e.target.value) })}
                             />
                         </label>
                         <label>
-                            <span className="label-text">
+                            <span className="font-semibold">
                                 <Tooltip text="Block until this time" position="right" />
                                 End:
                             </span>
                             <input
                                 type="time"
-                                value={formatTime(blockedSlot.endTime ?? 1020)}
+                                value={formatTime(blockedSlot.endTime ?? 780)}
                                 onChange={e => onChange({ ...blockedSlot, endTime: parseTime(e.target.value) })}
                             />
                         </label>
