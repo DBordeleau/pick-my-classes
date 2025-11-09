@@ -30,11 +30,21 @@ export interface CourseGroup {
     maxSelect?: number;    // choose at most N courses from this group
 }
 
+export type BlockedTimeslotType = "before" | "between" | "after";
+
+export interface BlockedTimeslot {
+    id: string;
+    type: BlockedTimeslotType;
+    days: Day[]; // can include special "Any" value handled separately
+    startTime?: number; // used for "between" and "after"
+    endTime?: number; // used for "before" and "between"
+}
+
 // Global constraints across all groups
 export interface GlobalConstraints {
-    minCourses?: number;   // e.g., select at least 4 courses total
-    maxCourses?: number;   // e.g., select at most 6 courses total
-    blockedDays?: Day[];
+    minCourses?: number;
+    maxCourses?: number;
+    blockedTimeslots?: BlockedTimeslot[]; // Changed from blockedDays
 }
 
 export interface CourseShape {
@@ -61,44 +71,66 @@ export class Course implements CourseShape {
         this.name = shape.name;
         this.sections = shape.sections.map(s => ({
             ...s,
-            times: { ...s.times },  // shallow copy of single timeslot
+            times: { ...s.times },
             tutorials: s.tutorials.map(t => ({
                 ...t,
-                times: { ...t.times }  // shallow copy of associated tutorial timeslot
+                times: { ...t.times }
             }))
         }));
         this.required = shape.required;
         this.validate();
     }
 
-    // Check if this course is selected (at least one section + required tutorial selected)
     isSelected(selectedIds: Set<string>): boolean {
         for (const sec of this.sections) {
             if (!selectedIds.has(sec.id)) continue;
 
-            // If section requires tutorial, at least one tutorial must be selected
             if (sec.hasTutorial) {
                 const hasSelectedTutorial = sec.tutorials.some(tut => selectedIds.has(tut.id));
                 if (!hasSelectedTutorial) continue;
             }
 
-            return true; // Found a valid section selection
+            return true;
         }
         return false;
     }
 
-    // Count how many courses are selected
     static countSelected(courses: Course[], selectedIds: Set<string>): number {
         return courses.filter(c => c.isSelected(selectedIds)).length;
     }
 
-    // Check if two timeslots conflict
     static timeSlotsConflict(a: TimeSlot, b: TimeSlot): boolean {
         const sharedDays = a.days.filter(day => b.days.includes(day));
         if (sharedDays.length === 0) return false;
 
-        // Check if times overlap on shared days
         return a.startTime < b.endTime && b.startTime < a.endTime;
+    }
+
+    // Check if a timeslot conflicts with a blocked timeslot
+    static timeslotConflictsWithBlocked(slot: TimeSlot, blocked: BlockedTimeslot): boolean {
+        // Check if any day in the slot matches the blocked days (or if blocked applies to "any" day)
+        const blockedDays = blocked.days.length === 0 ? slot.days : blocked.days;
+        const sharedDays = slot.days.filter(day => blockedDays.includes(day));
+        if (sharedDays.length === 0) return false;
+
+        // Check time overlap based on blocked type
+        switch (blocked.type) {
+            case "before":
+                // Conflict if slot starts before the blocked end time
+                return slot.startTime < (blocked.endTime ?? 0);
+
+            case "after":
+                // Conflict if slot ends after the blocked start time
+                return slot.endTime > (blocked.startTime ?? 1440);
+
+            case "between":
+                // Conflict if slot overlaps with the blocked time range
+                return slot.startTime < (blocked.endTime ?? 1440) &&
+                    slot.endTime > (blocked.startTime ?? 0);
+
+            default:
+                return false;
+        }
     }
 
     private validate() {
@@ -107,7 +139,6 @@ export class Course implements CourseShape {
         for (const sec of this.sections) {
             if (!sec.id) throw new Error(`Section missing id in course ${this.id}`);
 
-            // Validate section timeslot
             const t = sec.times;
             if (t.endTime <= t.startTime) {
                 throw new Error(`Invalid timeslot in ${this.id}/${sec.id}`);
@@ -116,12 +147,10 @@ export class Course implements CourseShape {
                 throw new Error(`Timeslot must have at least one day in ${this.id}/${sec.id}`);
             }
 
-            // Validate tutorial requirements
             if (sec.hasTutorial && sec.tutorials.length === 0) {
                 throw new Error(`Section ${sec.id} in course ${this.id} requires tutorial but none provided`);
             }
 
-            // Validate tutorials
             for (const tut of sec.tutorials) {
                 if (!tut.id) throw new Error(`Tutorial missing id in ${this.id}/${sec.id}`);
                 const tt = tut.times;

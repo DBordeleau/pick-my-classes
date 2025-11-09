@@ -108,6 +108,7 @@ export class TimetableGenerator {
 
     // Helper function to check if a new timeslot conflicts with current selections
     private hasTimeConflict(newSlot: TimeSlot, selectedIds: Set<string>): boolean {
+        // Check conflicts with already selected sections/tutorials
         for (const course of this.courses) {
             for (const section of course.sections) {
                 if (selectedIds.has(section.id)) {
@@ -122,30 +123,30 @@ export class TimetableGenerator {
             }
         }
 
-        const blockedDays = this.input.globalConstraints?.blockedDays || [];
-        const hasBlockedDay = newSlot.days.some(day => blockedDays.includes(day));
-        if (hasBlockedDay) return true;
+        // Check conflicts with blocked timeslots
+        const blockedTimeslots = this.input.globalConstraints?.blockedTimeslots || [];
+        for (const blocked of blockedTimeslots) {
+            if (Course.timeslotConflictsWithBlocked(newSlot, blocked)) {
+                return true;
+            }
+        }
 
         return false;
     }
 
-    // Validates the current configuration against global and group constraints and adds the configuration if valid
     private isValidConfiguration(selectedIds: Set<string>, selectedCourses: Map<string, SelectedCourse>): boolean {
         const numSelected = selectedCourses.size;
 
-        // Check global constraints
         const gc = this.input.globalConstraints;
         if (gc) {
             if (gc.minCourses !== undefined && numSelected < gc.minCourses) return false;
             if (gc.maxCourses !== undefined && numSelected > gc.maxCourses) return false;
         }
 
-        // Check all required courses are selected
         for (const course of this.courses) {
             if (course.required && !course.isSelected(selectedIds)) return false;
         }
 
-        // Check group constraints
         for (const group of this.input.groups) {
             const groupCourses = group.courses.map(c => new Course(c));
             const numSelectedInGroup = Course.countSelected(groupCourses, selectedIds);
@@ -162,7 +163,6 @@ export class TimetableGenerator {
     }
 }
 
-// Helper function to use the generator
 export function generateTimetables(input: TimetableInput): TimetableConfiguration[] {
     const generator = new TimetableGenerator(input);
     return generator.generate();

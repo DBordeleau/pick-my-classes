@@ -448,6 +448,7 @@ body {
   bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
+  animation: tooltip-fade-in-top 0.2s ease-out;
 }
 
 .tooltip-top::after {
@@ -461,6 +462,7 @@ body {
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
+  animation: tooltip-fade-in-bottom 0.2s ease-out;
 }
 
 .tooltip-bottom::after {
@@ -474,6 +476,7 @@ body {
   right: calc(100% + 8px);
   top: 50%;
   transform: translateY(-50%);
+  animation: tooltip-fade-in-left 0.2s ease-out;
 }
 
 .tooltip-left::after {
@@ -487,6 +490,7 @@ body {
   left: calc(100% + 8px);
   top: 50%;
   transform: translateY(-50%);
+  animation: tooltip-fade-in-right 0.2s ease-out;
 }
 
 .tooltip-right::after {
@@ -496,7 +500,7 @@ body {
   border-right-color: #1f2937;
 }
 
-@keyframes tooltip-fade-in {
+@keyframes tooltip-fade-in-top {
   from {
     opacity: 0;
     transform: translateX(-50%) translateY(-4px);
@@ -506,4 +510,112 @@ body {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
+}
+
+@keyframes tooltip-fade-in-bottom {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes tooltip-fade-in-left {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+@keyframes tooltip-fade-in-right {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* Blocked Timeslot Editor */
+.blocked-timeslots-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e5e7eb;
+}
+
+.blocked-timeslot-editor {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.blocked-timeslot-editor .day-btn.selected {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: white !important;
+}
+
+.blocked-timeslot-editor .day-btn:hover:not(.selected) {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.blocked-timeslot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.blocked-type-select {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 1rem;
+  background: white;
+}
+
+.blocked-day-selector {
+  margin-bottom: 1rem;
+}
+
+.blocked-time-inputs {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.blocked-time-inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.blocked-time-inputs input[type="time"] {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.day-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

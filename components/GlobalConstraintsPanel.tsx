@@ -1,5 +1,6 @@
-import { GlobalConstraints, Day } from '../lib/types/course';
+import { GlobalConstraints, BlockedTimeslot } from '../lib/types/course';
 import { Tooltip } from './Tooltip';
+import { BlockedTimeslotEditor } from './BlockedTimeslotEditor';
 
 interface Props {
     constraints: GlobalConstraints;
@@ -7,26 +8,45 @@ interface Props {
 }
 
 export function GlobalConstraintsPanel({ constraints, onChange }: Props) {
-    const days: Day[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-    const toggleBlockedDay = (day: Day) => {
-        const blocked = constraints.blockedDays || [];
-        const newBlocked = blocked.includes(day)
-            ? blocked.filter(d => d !== day)
-            : [...blocked, day];
-        onChange({ ...constraints, blockedDays: newBlocked });
-    };
-
-    // Use default values if not set
     const minCourses = constraints.minCourses ?? 1;
     const maxCourses = constraints.maxCourses ?? 5;
+
+    const handleAddBlockedSlot = () => {
+        const newBlocked: BlockedTimeslot = {
+            id: `blocked-${Date.now()}`,
+            type: 'before',
+            days: [],
+            endTime: 540
+        };
+        const current = constraints.blockedTimeslots || [];
+        onChange({ ...constraints, blockedTimeslots: [...current, newBlocked] });
+    };
+
+    const handleUpdateBlockedSlot = (id: string, updated: BlockedTimeslot) => {
+        const current = constraints.blockedTimeslots || [];
+        onChange({
+            ...constraints,
+            blockedTimeslots: current.map(b => b.id === id ? updated : b)
+        });
+    };
+
+    const handleDeleteBlockedSlot = (id: string) => {
+        const current = constraints.blockedTimeslots || [];
+        onChange({
+            ...constraints,
+            blockedTimeslots: current.filter(b => b.id !== id)
+        });
+    };
 
     return (
         <div className="global-constraints-panel">
             <h2>Global Timetable Constraints</h2>
 
             <div className="constraint-row">
-                <label><Tooltip text="Only generate timetables with at least this many courses." />Minimum courses:</label>
+                <label>
+                    <Tooltip text="Only generate timetables with at least this many courses." />
+                    Minimum courses:
+                </label>
                 <input
                     type="number"
                     min="0"
@@ -36,7 +56,10 @@ export function GlobalConstraintsPanel({ constraints, onChange }: Props) {
             </div>
 
             <div className="constraint-row">
-                <label><Tooltip text="Only generate timetables with no more than this many courses." />Maximum courses:</label>
+                <label>
+                    <Tooltip text="Only generate timetables with no more than this many courses." />
+                    Maximum courses:
+                </label>
                 <input
                     type="number"
                     min="0"
@@ -45,19 +68,31 @@ export function GlobalConstraintsPanel({ constraints, onChange }: Props) {
                 />
             </div>
 
-            <div className="constraint-row">
-                <label><Tooltip text="Do not select any classes that are scheduled on these days." />Blocked Days:</label>
-                <div className="day-selector">
-                    {days.map(day => (
-                        <button
-                            key={day}
-                            className={`day-btn ${constraints.blockedDays?.includes(day) ? 'blocked' : ''}`}
-                            onClick={() => toggleBlockedDay(day)}
-                        >
-                            {day}
-                        </button>
-                    ))}
+            <div className="blocked-timeslots-section">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <label style={{ fontWeight: 600, fontSize: '1.1rem' }}>
+                        <Tooltip text="Block specific times to exclude courses scheduled during these periods" />
+                        Blocked Time Slots:
+                    </label>
+                    <button onClick={handleAddBlockedSlot} className="add-btn-small">
+                        + Add Blocked Slot
+                    </button>
                 </div>
+
+                {(constraints.blockedTimeslots || []).length === 0 && (
+                    <p style={{ color: '#6b7280', fontStyle: 'italic' }}>
+                        No blocked timeslots. Add one to exclude specific times from your timetable.
+                    </p>
+                )}
+
+                {(constraints.blockedTimeslots || []).map(blocked => (
+                    <BlockedTimeslotEditor
+                        key={blocked.id}
+                        blockedSlot={blocked}
+                        onChange={updated => handleUpdateBlockedSlot(blocked.id, updated)}
+                        onDelete={() => handleDeleteBlockedSlot(blocked.id)}
+                    />
+                ))}
             </div>
         </div>
     );
