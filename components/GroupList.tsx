@@ -16,7 +16,7 @@ export function GroupList({ groups, onAddGroup, onUpdateGroup, onDeleteGroup, gl
     return (
         <div className="group-list">
             <div className="group-list-header">
-                <h2><Tooltip text="Groups allow you to set selection criteria for specific courses." />Course Groups</h2>
+                <h2><Tooltip text="Groups allow you to set different selection criteria for specific courses." />Course Groups</h2>
                 <button onClick={onAddGroup} className="add-btn">+ Add Group</button>
             </div>
 

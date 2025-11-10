@@ -3,7 +3,7 @@
     Each valid timetable is a combination of selected course sections and their associated tutorials.
 */
 
-import { Course, TimetableInput, TimeSlot } from './types/course';
+import { Course, TimetableInput, TimeSlot, CourseSection, TutorialSection } from './types/course';
 
 export interface TimetableConfiguration {
     selectedSectionIds: Set<string>;  // all section + tutorial IDs in this timetable
@@ -14,7 +14,10 @@ export interface SelectedCourse {
     courseId: string;
     courseName?: string;
     sectionId: string;
-    tutorialId?: string; // present if a tutorial was selected
+    sectionSuffix?: string;
+    tutorialId?: string;
+    sectionTime: TimeSlot;
+    tutorialTime?: TimeSlot;
 }
 
 export class TimetableGenerator {
@@ -23,10 +26,16 @@ export class TimetableGenerator {
 
     constructor(input: TimetableInput) {
         this.input = input;
-        // Flatten all courses from all groups into a single list
-        this.courses = input.groups.flatMap(g =>
-            g.courses.map(c => new Course(c))
-        );
+        // Flatten all courses from all groups into a single list and deduplicate by course ID (if a course is in multiple groups) to prevent duplicate timetables
+        const courseMap = new Map<string, Course>();
+        for (const group of input.groups) {
+            for (const courseShape of group.courses) {
+                if (!courseMap.has(courseShape.id)) {
+                    courseMap.set(courseShape.id, new Course(courseShape));
+                }
+            }
+        }
+        this.courses = Array.from(courseMap.values());
     }
 
     // Generates all valid timetables
@@ -44,8 +53,15 @@ export class TimetableGenerator {
         selectedCourses: Map<string, SelectedCourse>,
         results: TimetableConfiguration[]
     ) {
-        // Check if we've processed all courses (base case)
-        if (selectedCourses.size + this.getUnprocessedCourseCount(selectedCourses) === this.courses.length) {
+        // Check if we've exceeded maxCourses
+        const actualSelectedCount = Array.from(selectedCourses.values()).filter(c => c !== null).length;
+        const gc = this.input.globalConstraints;
+        if (gc?.maxCourses !== undefined && actualSelectedCount > gc.maxCourses) {
+            return; // Prune this branch
+        }
+
+        // Base case: we've processed every course
+        if (selectedCourses.size === this.courses.length) {
             // Validate this configuration based on global and group constraints
             if (this.isValidConfiguration(selectedIds, selectedCourses)) {
                 results.push({
@@ -59,56 +75,65 @@ export class TimetableGenerator {
         const nextCourse = this.courses.find(c => !selectedCourses.has(c.id));
         if (!nextCourse) return;
 
-        // Case 1: Skip this course (if not required)
+        // Case 1: Skip this course (only if not required)
         if (!nextCourse.required) {
-            this.backtrack(selectedIds, selectedCourses, results);
+            const newSelectedCourses = new Map(selectedCourses);
+            newSelectedCourses.set(nextCourse.id, null as any); // Mark as processed but not selected
+            this.backtrack(selectedIds, newSelectedCourses, results);
         }
 
         // Case 2: Try each section of this course
-        for (const section of nextCourse.sections) {
-            // Check if section conflicts with current selection
-            if (this.hasTimeConflict(section.times, selectedIds)) continue;
+        // But only if we haven't already hit maxCourses
+        if (gc?.maxCourses === undefined || actualSelectedCount < gc.maxCourses) {
+            for (const section of nextCourse.sections) {
+                // Check if section conflicts with current selection
+                if (this.hasTimeConflict(section.times, selectedIds)) continue;
 
-            // If section needs tutorial, try each tutorial
-            if (section.hasTutorial) {
-                for (const tutorial of section.tutorials) {
-                    if (this.hasTimeConflict(tutorial.times, selectedIds)) continue;
+                // If section needs tutorial, try each tutorial
+                if (section.hasTutorial) {
+                    for (const tutorial of section.tutorials) {
+                        if (this.hasTimeConflict(tutorial.times, selectedIds)) continue;
 
-                    // Add section + tutorial to selection
+                        // Add section + tutorial to selection
+                        const newSelectedIds = new Set(selectedIds);
+                        newSelectedIds.add(section.id);
+                        newSelectedIds.add(tutorial.id);
+
+                        const newSelectedCourses = new Map(selectedCourses);
+                        newSelectedCourses.set(nextCourse.id, {
+                            courseId: nextCourse.id,
+                            courseName: nextCourse.name,
+                            sectionId: section.id,
+                            sectionSuffix: section.suffix,
+                            tutorialId: tutorial.id,
+                            sectionTime: section.times,
+                            tutorialTime: tutorial.times
+                        });
+
+                        this.backtrack(newSelectedIds, newSelectedCourses, results);
+                    }
+                } else {
+                    // No tutorial needed, just add section
                     const newSelectedIds = new Set(selectedIds);
                     newSelectedIds.add(section.id);
-                    newSelectedIds.add(tutorial.id);
 
                     const newSelectedCourses = new Map(selectedCourses);
                     newSelectedCourses.set(nextCourse.id, {
                         courseId: nextCourse.id,
                         courseName: nextCourse.name,
                         sectionId: section.id,
-                        tutorialId: tutorial.id
+                        sectionSuffix: section.suffix,
+                        sectionTime: section.times
                     });
 
                     this.backtrack(newSelectedIds, newSelectedCourses, results);
                 }
-            } else {
-                // No tutorial needed, just add section
-                const newSelectedIds = new Set(selectedIds);
-                newSelectedIds.add(section.id);
-
-                const newSelectedCourses = new Map(selectedCourses);
-                newSelectedCourses.set(nextCourse.id, {
-                    courseId: nextCourse.id,
-                    courseName: nextCourse.name,
-                    sectionId: section.id
-                });
-
-                this.backtrack(newSelectedIds, newSelectedCourses, results);
             }
         }
     }
 
-    // Helper function to check if a new timeslot conflicts with current selections
+    // Helper function to check if a new timeslot conflicts with current selections or blocked timeslots
     private hasTimeConflict(newSlot: TimeSlot, selectedIds: Set<string>): boolean {
-        // Check conflicts with already selected sections/tutorials
         for (const course of this.courses) {
             for (const section of course.sections) {
                 if (selectedIds.has(section.id)) {
@@ -135,18 +160,23 @@ export class TimetableGenerator {
     }
 
     private isValidConfiguration(selectedIds: Set<string>, selectedCourses: Map<string, SelectedCourse>): boolean {
-        const numSelected = selectedCourses.size;
+        // Filter out skipped courses (null values) when counting
+        const actualSelectedCourses = Array.from(selectedCourses.values()).filter(c => c !== null);
+        const numSelected = actualSelectedCourses.length;
 
+        // Check global constraints
         const gc = this.input.globalConstraints;
         if (gc) {
             if (gc.minCourses !== undefined && numSelected < gc.minCourses) return false;
             if (gc.maxCourses !== undefined && numSelected > gc.maxCourses) return false;
         }
 
+        // Check required courses
         for (const course of this.courses) {
             if (course.required && !course.isSelected(selectedIds)) return false;
         }
 
+        // Check group constraints
         for (const group of this.input.groups) {
             const groupCourses = group.courses.map(c => new Course(c));
             const numSelectedInGroup = Course.countSelected(groupCourses, selectedIds);
