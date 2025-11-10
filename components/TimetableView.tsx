@@ -20,7 +20,7 @@ interface TimetableBlock {
 export function TimetableView({ timetables }: Props) {
     const [currentIndex, setCurrentIndex] = useState(0);
 
-    if (timetables.length === 0) return null;
+    if (!timetables || timetables.length === 0) return null;
 
     // Sort timetables by number of selected courses so the user sees the most complete tables first
     const sortedTimetables = [...timetables].sort((a, b) => {
@@ -30,6 +30,8 @@ export function TimetableView({ timetables }: Props) {
     });
 
     const currentTimetable = sortedTimetables[currentIndex];
+
+    if (!currentTimetable || !currentTimetable.courses) return null;
 
     // Extract all blocks (lectures and tutorials) from the current timetable
     const blocks: TimetableBlock[] = [];
@@ -73,7 +75,7 @@ export function TimetableView({ timetables }: Props) {
     });
 
     const days: Day[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-    const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM to 9 PM, does Carleton even have classes that late?
+    const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM to 9 PM
 
     const formatTime = (hour: number): string => {
         if (hour === 12) return '12 PM';
