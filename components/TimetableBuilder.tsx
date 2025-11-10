@@ -100,7 +100,7 @@ export function TimetableBuilder() {
             )}
 
             {results.length > 0 && (
-                <TimetableView timetables={results} />
+                <TimetableView key={results.length} timetables={results} />
             )}
         </div>
     );
