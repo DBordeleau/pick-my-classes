@@ -15,7 +15,6 @@ interface Props {
 export function SectionCard({ courseName, section, onUpdate, onDelete, autoFocus = false }: Props) {
     const suffixInputRef = useRef<HTMLInputElement>(null);
     const [lastAddedTutorialId, setLastAddedTutorialId] = useState<string | null>(null);
-    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const handleAddTutorial = () => {
         const sectionSuffix = section.suffix ?? '';
@@ -108,7 +107,7 @@ export function SectionCard({ courseName, section, onUpdate, onDelete, autoFocus
     const displaySuffix = suffixInput;
     const sectionDisplayName = `${courseName}-${section.suffix ?? displaySuffix}`;
 
-    if (isCollapsed) {
+    if (section.isCollapsed) {
         return (
             <div className="section-card section-card-collapsed">
                 <div className="section-header">
@@ -119,7 +118,7 @@ export function SectionCard({ courseName, section, onUpdate, onDelete, autoFocus
                         </p>
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={() => setIsCollapsed(false)} className="edit-btn-small">Edit</button>
+                        <button onClick={() => onUpdate({ ...section, isCollapsed: false })} className="edit-btn-small">Edit</button>
                         <button onClick={onDelete} className="delete-btn-small">×</button>
                     </div>
                 </div>
@@ -191,7 +190,7 @@ export function SectionCard({ courseName, section, onUpdate, onDelete, autoFocus
                 />
             )}
 
-            <button onClick={() => setIsCollapsed(true)} className="save-btn">
+            <button onClick={() => onUpdate({ ...section, isCollapsed: true })} className="save-btn">
                 Save Section
             </button>
         </div>

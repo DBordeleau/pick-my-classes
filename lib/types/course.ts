@@ -20,6 +20,7 @@ export interface CourseSection {
     hasTutorial: boolean;  // if true, student MUST pick one tutorial
     tutorials: TutorialSection[];  // empty if hasTutorial is false
     suffix?: string;
+    isCollapsed?: boolean; // UI state: whether section is collapsed
 }
 
 export interface CourseGroup {
@@ -52,6 +53,7 @@ export interface CourseShape {
     name?: string;         // e.g., "Calculus I"
     sections: CourseSection[];  // List of all available sections for this course
     required: boolean;    // if true, this course MUST be selected
+    isCollapsed?: boolean; // UI state: whether course is collapsed
 }
 
 // The complete input for timetable generation

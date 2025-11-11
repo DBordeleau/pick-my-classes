@@ -42,7 +42,6 @@ function nextSuffixFromExisting(sections: CourseSection[]): string {
 export function CourseCard({ course, onUpdate, onDelete, autoFocus = false }: Props) {
     const nameInputRef = useRef<HTMLInputElement>(null);
     const [lastAddedSectionId, setLastAddedSectionId] = useState<string | null>(null);
-    const [isCollapsed, setIsCollapsed] = useState(false);
 
     useEffect(() => {
         if (autoFocus && nameInputRef.current) {
@@ -78,7 +77,7 @@ export function CourseCard({ course, onUpdate, onDelete, autoFocus = false }: Pr
         });
     };
 
-    if (isCollapsed) {
+    if (course.isCollapsed) {
         return (
             <div className="course-card course-card-collapsed">
                 <div className="course-header">
@@ -90,7 +89,7 @@ export function CourseCard({ course, onUpdate, onDelete, autoFocus = false }: Pr
                         <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
                             {course.sections?.length || 0} section{course.sections?.length !== 1 ? 's' : ''}
                         </span>
-                        <button onClick={() => setIsCollapsed(false)} className="edit-btn">Edit</button>
+                        <button onClick={() => onUpdate({ ...course, isCollapsed: false })} className="edit-btn">Edit</button>
                         <button onClick={onDelete} className="delete-btn">Delete</button>
                     </div>
                 </div>
@@ -129,7 +128,7 @@ export function CourseCard({ course, onUpdate, onDelete, autoFocus = false }: Pr
                 lastAddedSectionId={lastAddedSectionId}
             />
 
-            <button onClick={() => setIsCollapsed(true)} className="save-btn">
+            <button onClick={() => onUpdate({ ...course, isCollapsed: true })} className="save-btn">
                 Save Course
             </button>
         </div>
