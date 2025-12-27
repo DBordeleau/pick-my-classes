@@ -83,6 +83,14 @@ export class Course implements CourseShape {
         this.validate();
     }
 
+    /**
+     * Checks if this course is properly selected in the given timetable configuration.
+     * A course is considered selected if at least one of its sections is in the selectedIds set,
+     * and if that section requires a tutorial, at least one tutorial must also be selected.
+     * 
+     * @param selectedIds - Set of all selected section and tutorial IDs in the timetable
+     * @returns true if the course has a valid section (with tutorial if needed) selected, false otherwise
+     */
     isSelected(selectedIds: Set<string>): boolean {
         for (const sec of this.sections) {
             if (!selectedIds.has(sec.id)) continue;
@@ -97,10 +105,26 @@ export class Course implements CourseShape {
         return false;
     }
 
+    /**
+     * Counts how many courses from the given list are selected in the timetable.
+     * Uses the isSelected method to determine if each course is selected.
+     * 
+     * @param courses - Array of courses to check
+     * @param selectedIds - Set of all selected section and tutorial IDs in the timetable
+     * @returns The number of courses that have at least one valid section selected
+     */
     static countSelected(courses: Course[], selectedIds: Set<string>): number {
         return courses.filter(c => c.isSelected(selectedIds)).length;
     }
 
+    /**
+     * Checks if two timeslots have a scheduling conflict.
+     * Timeslots conflict if they share at least one day and their time ranges overlap.
+     * 
+     * @param a - First timeslot to compare
+     * @param b - Second timeslot to compare
+     * @returns true if the timeslots conflict, false otherwise
+     */
     static timeSlotsConflict(a: TimeSlot, b: TimeSlot): boolean {
         const sharedDays = a.days.filter(day => b.days.includes(day));
         if (sharedDays.length === 0) return false;
@@ -108,7 +132,21 @@ export class Course implements CourseShape {
         return a.startTime < b.endTime && b.startTime < a.endTime;
     }
 
-    // Check if a timeslot conflicts with a blocked timeslot
+    /**
+     * Checks if a timeslot conflicts with a blocked timeslot constraint.
+     * Blocked timeslots represent user preferences to avoid classes at certain times and are part of global constraints.
+     * 
+     * Three types of blocked timeslots:
+     * - "before": Blocks all times before a specified endTime
+     * - "after": Blocks all times after a specified startTime  
+     * - "between": Blocks a specific time range
+     * 
+     * If blocked.days is empty, the block applies to all days.
+     * 
+     * @param slot - The timeslot to check (e.g., a course section's time)
+     * @param blocked - The blocked timeslot constraint to check against
+     * @returns true if the slot violates the blocked constraint, false otherwise
+     */
     static timeslotConflictsWithBlocked(slot: TimeSlot, blocked: BlockedTimeslot): boolean {
         // Check if any day in the slot matches the blocked days (or if blocked applies to "any" day)
         const blockedDays = blocked.days.length === 0 ? slot.days : blocked.days;
@@ -135,6 +173,18 @@ export class Course implements CourseShape {
         }
     }
 
+    /**
+     * Validates the course data structure to ensure all required fields are present
+     * and data is consistent. Throws an error if validation fails.
+     * 
+     * Validation checks:
+     * - Course has an id
+     * - All sections have ids and valid timeslots (end > start, at least one day)
+     * - Sections requiring tutorials have at least one tutorial defined
+     * - All tutorials have ids and valid timeslots
+     * 
+     * @throws Error if any validation check fails
+     */
     private validate() {
         if (!this.id) throw new Error('Course must have an id');
 
