@@ -55,16 +55,16 @@ function isSectionValid(section: CourseSection): { valid: boolean; error?: strin
 
 export function SectionList({ courseName, sections, onAddSection, onUpdateSection, onDeleteSection, lastAddedSectionId }: Props) {
     // Track which section is currently expanded (accordion behavior)
-    // Initialize to lastAddedSectionId if provided
-    const [expandedSectionId, setExpandedSectionId] = useState<string | null>(lastAddedSectionId);
+    const [expandedSectionId, setExpandedSectionId] = useState<string | null>(null);
     const [validationError, setValidationError] = useState<string | null>(null);
+    // Track the lastAddedSectionId we've already handled (so new additions auto-expand)
+    const [handledLastAddedId, setHandledLastAddedId] = useState<string | null>(null);
 
-    // Compute the effective expanded section:
-    // - If lastAddedSectionId matches an existing section and it's different from our tracked state,
-    //   we should show the newly added section as expanded
-    const effectiveExpandedId = lastAddedSectionId && sections.some(s => s.id === lastAddedSectionId)
-        ? lastAddedSectionId
-        : expandedSectionId;
+    // Determine which section should be expanded:
+    // 1. If there's a new lastAddedSectionId we haven't handled yet, expand it
+    // 2. Otherwise, use the user's explicit selection (expandedSectionId)
+    const hasNewSection = lastAddedSectionId && lastAddedSectionId !== handledLastAddedId && sections.some(s => s.id === lastAddedSectionId);
+    const effectiveExpandedId = hasNewSection ? lastAddedSectionId : expandedSectionId;
 
     // Get the currently expanded section
     const currentExpandedSection = sections.find(s => s.id === effectiveExpandedId);
@@ -91,13 +91,19 @@ export function SectionList({ courseName, sections, onAddSection, onUpdateSectio
         // Clear any validation error when making valid changes
         setValidationError(null);
 
-        // If section is being collapsed, clear expanded state
+        // If section is being collapsed, clear expanded state and mark lastAddedSectionId as handled
         if (updated.isCollapsed && effectiveExpandedId === sectionId) {
             setExpandedSectionId(null);
+            if (lastAddedSectionId === sectionId) {
+                setHandledLastAddedId(lastAddedSectionId);
+            }
         }
-        // If section is being expanded, set it as the only expanded one
+        // If section is being expanded, set it as the only expanded one and mark lastAddedSectionId as handled
         if (!updated.isCollapsed) {
             setExpandedSectionId(sectionId);
+            if (lastAddedSectionId) {
+                setHandledLastAddedId(lastAddedSectionId);
+            }
         }
         onUpdateSection(sectionId, updated);
     };

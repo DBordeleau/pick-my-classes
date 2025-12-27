@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import html2canvas from 'html2canvas';
 import { TimetableConfiguration } from '../lib/timetable_generator';
 import { Day } from '../lib/types/course';
 
@@ -19,6 +20,25 @@ interface TimetableBlock {
 
 export function TimetableView({ timetables }: Props) {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const timetableRef = useRef<HTMLDivElement>(null);
+
+    const handleSaveAsPNG = async () => {
+        if (!timetableRef.current) return;
+
+        try {
+            const canvas = await html2canvas(timetableRef.current, {
+                backgroundColor: '#ffffff',
+                scale: 2, // Higher resolution
+            });
+
+            const link = document.createElement('a');
+            link.download = `timetable-${currentIndex + 1}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (error) {
+            console.error('Failed to save timetable as PNG:', error);
+        }
+    };
 
     if (!timetables || timetables.length === 0) return null;
 
@@ -148,7 +168,11 @@ export function TimetableView({ timetables }: Props) {
                 </button>
             </div>
 
-            <div className="timetable-grid-container">
+            <button onClick={handleSaveAsPNG} className="save-png-btn">
+                Save as .PNG
+            </button>
+
+            <div className="timetable-grid-container" ref={timetableRef}>
                 <div className="timetable-grid">
                     {/* Header row with days */}
                     <div className="time-column-header"></div>

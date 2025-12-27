@@ -945,7 +945,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   padding-bottom: 1rem;
   border-bottom: 2px solid #e5e7eb;
 }
@@ -954,6 +954,24 @@ body {
   margin: 0;
   font-size: 1.5rem;
   color: #1f2937;
+}
+
+.save-png-btn {
+  display: block;
+  margin: 0 auto 1rem auto;
+  padding: 0.5rem 1.25rem;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-png-btn:hover {
+  background: #059669;
 }
 
 .nav-btn {
