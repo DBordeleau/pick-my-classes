@@ -138,8 +138,11 @@ export class TimetableGenerator {
                 // If section requires a tutorial, try each tutorial option
                 if (section.hasTutorial) {
                     for (const tutorial of section.tutorials) {
-                        // Skip tutorial if it has time conflicts
+                        // Skip tutorial if it has time conflicts with already selected courses
                         if (this.hasTimeConflict(tutorial.times, selectedIds)) continue;
+
+                        // CRITICAL: Also check if tutorial conflicts with its own section's lecture time!
+                        if (Course.timeSlotsConflict(tutorial.times, section.times)) continue;
 
                         // Create new state with section + tutorial selected
                         const newSelectedIds = new Set(selectedIds);

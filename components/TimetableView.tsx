@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { TimetableConfiguration } from '../lib/timetable_generator';
 import { Day } from '../lib/types/course';
+import { FaGoogle } from "react-icons/fa";
+import { RiArrowDropDownLine } from "react-icons/ri";
 
 interface Props {
     timetables: TimetableConfiguration[];
@@ -18,9 +20,95 @@ interface TimetableBlock {
     endTime: number;
 }
 
+interface GoogleTokens {
+    accessToken: string;
+    refreshToken?: string;
+    expiresAt: number;
+}
+
+interface InitialAuthState {
+    tokens: GoogleTokens | null;
+    showModal: boolean;
+    error: string | null;
+}
+
+// Helper to get initial tokens from URL or sessionStorage (client-side only)
+function getInitialTokens(): InitialAuthState {
+    if (typeof window === 'undefined') {
+        return { tokens: null, showModal: false, error: null };
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get('access_token');
+    const expiresIn = params.get('expires_in');
+    const authError = params.get('auth_error');
+
+    if (authError) {
+        // Defer URL cleanup to avoid setState during render warning
+        setTimeout(() => window.history.replaceState({}, '', window.location.pathname), 0);
+        return { tokens: null, showModal: false, error: `Google authentication failed: ${authError}` };
+    }
+
+    if (accessToken && expiresIn) {
+        const tokens: GoogleTokens = {
+            accessToken,
+            refreshToken: params.get('refresh_token') || undefined,
+            expiresAt: Date.now() + parseInt(expiresIn) * 1000,
+        };
+        sessionStorage.setItem('google_tokens', JSON.stringify(tokens));
+        // Defer URL cleanup to avoid setState during render warning
+        setTimeout(() => window.history.replaceState({}, '', window.location.pathname), 0);
+        return { tokens, showModal: true, error: null };
+    }
+
+    // Try to restore from sessionStorage
+    const stored = sessionStorage.getItem('google_tokens');
+    if (stored) {
+        const tokens = JSON.parse(stored) as GoogleTokens;
+        if (tokens.expiresAt > Date.now()) {
+            return { tokens, showModal: false, error: null };
+        }
+        sessionStorage.removeItem('google_tokens');
+    }
+
+    return { tokens: null, showModal: false, error: null };
+}
+
+// Cache initial state to avoid re-computation
+let cachedInitialState: InitialAuthState | null = null;
+function getCachedInitialState(): InitialAuthState {
+    if (cachedInitialState === null) {
+        cachedInitialState = getInitialTokens();
+    }
+    return cachedInitialState;
+}
+
 export function TimetableView({ timetables }: Props) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const timetableRef = useRef<HTMLDivElement>(null);
+
+    // Use lazy initialization to read initial state only once
+    const [googleTokens, setGoogleTokens] = useState<GoogleTokens | null>(() => getCachedInitialState().tokens);
+    const [showExportModal, setShowExportModal] = useState(() => getCachedInitialState().showModal);
+    const [termStart, setTermStart] = useState('');
+    const [termEnd, setTermEnd] = useState('');
+    const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'success' | 'error'>(
+        () => getCachedInitialState().error ? 'error' : 'idle'
+    );
+    const [exportMessage, setExportMessage] = useState(() => getCachedInitialState().error || '');
+    const [showExportDropdown, setShowExportDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown when clicking outside
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowExportDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleSaveAsPNG = async () => {
         if (!timetableRef.current) return;
@@ -37,6 +125,74 @@ export function TimetableView({ timetables }: Props) {
             link.click();
         } catch (error) {
             console.error('Failed to save timetable as PNG:', error);
+        }
+    };
+
+    const handleGoogleCalendarExport = () => {
+        if (!googleTokens || googleTokens.expiresAt < Date.now()) {
+            // Need to authenticate first
+            window.location.href = '/api/auth/google';
+            return;
+        }
+        setShowExportModal(true);
+    };
+
+    const handleExportConfirm = async () => {
+        if (!termStart || !termEnd) {
+            setExportMessage('Please select both term start and end dates.');
+            setExportStatus('error');
+            return;
+        }
+
+        if (new Date(termEnd) <= new Date(termStart)) {
+            setExportMessage('Term end date must be after start date.');
+            setExportStatus('error');
+            return;
+        }
+
+        if (!googleTokens) {
+            setExportMessage('Not authenticated with Google.');
+            setExportStatus('error');
+            return;
+        }
+
+        setExportStatus('exporting');
+        setExportMessage('Exporting to Google Calendar...');
+
+        try {
+            const response = await fetch('/api/calendar/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    accessToken: googleTokens.accessToken,
+                    events: blocks.map(block => ({
+                        courseName: block.courseDisplayName,
+                        type: block.type,
+                        day: block.day,
+                        startTime: block.startTime,
+                        endTime: block.endTime,
+                    })),
+                    termStart,
+                    termEnd,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                setExportStatus('success');
+                setExportMessage(`Successfully exported the selected timetable to your Google Calendar!`);
+                if (result.errors && result.errors.length > 0) {
+                    setExportMessage(prev => prev + ` (${result.errors.length} errors)`);
+                }
+            } else {
+                setExportStatus('error');
+                setExportMessage(result.error || 'Export failed');
+            }
+        } catch (error) {
+            console.error('Export error:', error);
+            setExportStatus('error');
+            setExportMessage('Failed to export to Google Calendar');
         }
     };
 
@@ -168,9 +324,99 @@ export function TimetableView({ timetables }: Props) {
                 </button>
             </div>
 
-            <button onClick={handleSaveAsPNG} className="save-png-btn">
-                Save as .PNG
-            </button>
+            <div className="export-dropdown" ref={dropdownRef}>
+                <button
+                    onClick={() => setShowExportDropdown(!showExportDropdown)}
+                    className="export-dropdown-btn"
+                >
+                    Save/Export Timetable
+                    <RiArrowDropDownLine className={`dropdown-arrow ${showExportDropdown ? 'expanded' : ''}`} />
+                </button>
+                <div className={`export-dropdown-menu ${showExportDropdown ? 'open' : ''}`}>
+                    <button
+                        onClick={() => { handleSaveAsPNG(); setShowExportDropdown(false); }}
+                        className="export-dropdown-item"
+                    >
+                        Save as .PNG
+                    </button>
+                    <button
+                        onClick={() => { handleGoogleCalendarExport(); setShowExportDropdown(false); }}
+                        className="export-dropdown-item"
+                    >
+                        <FaGoogle style={{ marginRight: '0.5rem' }} /> Export to Google Calendar
+                    </button>
+                </div>
+            </div>
+
+            {/* Google Calendar Export Modal */}
+            {showExportModal && (
+                <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <h3>Export to Google Calendar</h3>
+                        <p>Select the start and end dates of your school term:</p>
+
+                        <div className="term-date-inputs">
+                            <label>
+                                Term Start:
+                                <input
+                                    type="date"
+                                    value={termStart}
+                                    onChange={e => setTermStart(e.target.value)}
+                                />
+                            </label>
+                            <label>
+                                Term End:
+                                <input
+                                    type="date"
+                                    value={termEnd}
+                                    onChange={e => setTermEnd(e.target.value)}
+                                />
+                            </label>
+                        </div>
+
+                        {exportMessage && (
+                            <div className={`export-message ${exportStatus}`}>
+                                {exportMessage}
+                            </div>
+                        )}
+
+                        <div className="modal-buttons">
+                            {exportStatus === 'success' ? (
+                                <button
+                                    onClick={() => {
+                                        setShowExportModal(false);
+                                        setExportStatus('idle');
+                                        setExportMessage('');
+                                    }}
+                                    className="modal-confirm-btn"
+                                >
+                                    Done
+                                </button>
+                            ) : (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            setShowExportModal(false);
+                                            setExportStatus('idle');
+                                            setExportMessage('');
+                                        }}
+                                        className="modal-cancel-btn"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleExportConfirm}
+                                        className="modal-confirm-btn"
+                                        disabled={exportStatus === 'exporting'}
+                                    >
+                                        {exportStatus === 'exporting' ? 'Exporting...' : 'Export'}
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="timetable-grid-container" ref={timetableRef}>
                 <div className="timetable-grid">

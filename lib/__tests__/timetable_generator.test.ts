@@ -14,7 +14,7 @@ import {
     toMinutes,
     extractCourseIds,
     hasSelection
-} from './test-helpers';
+} from './test-helpers-util';
 
 describe('TimetableGenerator', () => {
     describe('multiple groups and constraints', () => {
@@ -596,6 +596,99 @@ describe('TimetableGenerator', () => {
             const results = generateTimetables(input);
 
             expect(results.length).toBe(0);
+        });
+    });
+
+    describe('tutorial and lecture conflict detection', () => {
+        it('should NOT generate timetables where a tutorial conflicts with its own lecture', () => {
+            // This test ensures we catch the bug where a tutorial that overlaps
+            // with its parent section's lecture time was incorrectly allowed
+            const courseWithConflictingTutorial = createCourse({
+                id: 'comp2804',
+                name: 'COMP 2804',
+                sections: [
+                    createSectionWithTutorial(
+                        // Lecture: Tue/Thu 10:00 AM - 11:30 AM
+                        { id: 'comp2804-a', suffix: 'A', times: createTimeSlot({ days: ['Tue', 'Thu'], startTime: toMinutes(10), endTime: toMinutes(11, 30) }) },
+                        // Tutorial: Tue/Thu 10:30 AM - 11:30 AM (CONFLICTS with lecture!)
+                        { id: 'comp2804-a-tut', times: createTimeSlot({ days: ['Tue', 'Thu'], startTime: toMinutes(10, 30), endTime: toMinutes(11, 30) }), name: 'COMP 2804-A Tutorial' }
+                    )
+                ]
+            });
+
+            const group = createGroup({
+                courses: [courseWithConflictingTutorial],
+                minSelect: 1,
+                maxSelect: 1
+            });
+
+            const input = createInput([group], { minCourses: 1, maxCourses: 1 });
+
+            const results = generateTimetables(input);
+
+            // Should be 0 because the only tutorial conflicts with its lecture
+            expect(results.length).toBe(0);
+        });
+
+        it('should generate timetables when tutorial does NOT conflict with lecture', () => {
+            const courseWithValidTutorial = createCourse({
+                id: 'comp2804',
+                name: 'COMP 2804',
+                sections: [
+                    createSectionWithTutorial(
+                        // Lecture: Tue/Thu 10:00 AM - 11:30 AM
+                        { id: 'comp2804-a', suffix: 'A', times: createTimeSlot({ days: ['Tue', 'Thu'], startTime: toMinutes(10), endTime: toMinutes(11, 30) }) },
+                        // Tutorial: Friday 2:00 PM - 3:00 PM (no conflict)
+                        { id: 'comp2804-a-tut', times: createTimeSlot({ days: ['Fri'], startTime: toMinutes(14), endTime: toMinutes(15) }), name: 'COMP 2804-A Tutorial' }
+                    )
+                ]
+            });
+
+            const group = createGroup({
+                courses: [courseWithValidTutorial],
+                minSelect: 1,
+                maxSelect: 1
+            });
+
+            const input = createInput([group], { minCourses: 1, maxCourses: 1 });
+
+            const results = generateTimetables(input);
+
+            expect(results.length).toBe(1);
+            expect(results[0].courses.get('comp2804')?.tutorialId).toBe('comp2804-a-tut');
+        });
+
+        it('should allow non-conflicting tutorial when one tutorial conflicts with lecture', () => {
+            const course = createCourse({
+                id: 'comp2804',
+                name: 'COMP 2804',
+                sections: [{
+                    id: 'comp2804-a',
+                    suffix: 'A',
+                    times: createTimeSlot({ days: ['Tue', 'Thu'], startTime: toMinutes(10), endTime: toMinutes(11, 30) }),
+                    hasTutorial: true,
+                    tutorials: [
+                        // Tutorial 1: Conflicts with lecture
+                        createTutorial({ id: 'comp2804-a-tut1', times: createTimeSlot({ days: ['Tue'], startTime: toMinutes(10, 30), endTime: toMinutes(11, 30) }), name: 'Tutorial 1' }),
+                        // Tutorial 2: Does not conflict
+                        createTutorial({ id: 'comp2804-a-tut2', times: createTimeSlot({ days: ['Wed'], startTime: toMinutes(14), endTime: toMinutes(15) }), name: 'Tutorial 2' })
+                    ]
+                }]
+            });
+
+            const group = createGroup({
+                courses: [course],
+                minSelect: 1,
+                maxSelect: 1
+            });
+
+            const input = createInput([group], { minCourses: 1, maxCourses: 1 });
+
+            const results = generateTimetables(input);
+
+            // Should have exactly 1 result using the non-conflicting tutorial
+            expect(results.length).toBe(1);
+            expect(results[0].courses.get('comp2804')?.tutorialId).toBe('comp2804-a-tut2');
         });
     });
 });
