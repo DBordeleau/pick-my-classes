@@ -77,7 +77,7 @@ function TutorialCard({ tutorial, defaultName, index, onUpdate, onDelete, autoFo
             <TimeslotEditor
                 timeslot={tutorial.times}
                 onChange={times => onUpdate({ ...tutorial, times })}
-                label=""
+                label="Tutorial Time"
             />
         </div>
     );

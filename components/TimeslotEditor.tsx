@@ -32,7 +32,7 @@ export function TimeslotEditor({ timeslot, onChange, label }: Props) {
         <div className="timeslot-editor">
             {label && <label>{label}</label>}
 
-            <div className="day-selector">
+            <div className="day-selector justify-center">
                 {days.map(day => (
                     <button
                         key={day}
@@ -44,13 +44,21 @@ export function TimeslotEditor({ timeslot, onChange, label }: Props) {
                 ))}
             </div>
 
-            <div className="time-inputs">
+            <div className="time-inputs justify-center">
                 <label>
                     Start:
                     <input
                         type="time"
                         value={formatTime(timeslot.startTime)}
                         onChange={e => onChange({ ...timeslot, startTime: parseTime(e.target.value) })}
+                        style={{
+                            fontWeight: 600,
+                            color: 'black',
+                            fontSize: '0.95rem',
+                            textAlign: 'center',
+                            background: 'white',
+                            border: '1px solid black',
+                        }}
                     />
                 </label>
                 <label>
@@ -59,6 +67,14 @@ export function TimeslotEditor({ timeslot, onChange, label }: Props) {
                         type="time"
                         value={formatTime(timeslot.endTime)}
                         onChange={e => onChange({ ...timeslot, endTime: parseTime(e.target.value) })}
+                        style={{
+                            fontWeight: 600,
+                            color: 'black',
+                            fontSize: '0.95rem',
+                            textAlign: 'center',
+                            background: 'white',
+                            border: '1px solid black',
+                        }}
                     />
                 </label>
             </div>

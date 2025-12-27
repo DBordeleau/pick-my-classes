@@ -13,9 +13,16 @@ export function BlockedTimeslotEditor({ blockedSlot, onChange, onDelete }: Props
 
     const toggleDay = (day: Day) => {
         const current = blockedSlot.days || [];
-        const newDays = current.includes(day)
+        let newDays = current.includes(day)
             ? current.filter(d => d !== day)
             : [...current, day];
+
+        // If all days (Mon-Sun) are selected, auto-switch to "Any day" (empty array)
+        const hasAllDays = days.every(wd => newDays.includes(wd));
+        if (hasAllDays) {
+            newDays = []; // Empty array means "any day"
+        }
+
         onChange({ ...blockedSlot, days: newDays });
     };
 

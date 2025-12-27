@@ -11,14 +11,46 @@ interface Props {
     lastAddedSectionId: string | null;
 }
 
+// Check if a timeslot has valid time data (start < end)
+function isTimeslotValid(times: { days: string[]; startTime: number; endTime: number }): { valid: boolean; error?: string } {
+    if (times.days.length === 0) {
+        return { valid: false, error: 'Please select at least one day.' };
+    }
+    if (times.startTime === undefined || times.endTime === undefined) {
+        return { valid: false, error: 'Please set both start and end times.' };
+    }
+    if (times.startTime === times.endTime) {
+        return { valid: false, error: 'Start time and end time cannot be the same.' };
+    }
+    if (times.startTime > times.endTime) {
+        return { valid: false, error: 'Start time must be before end time.' };
+    }
+    return { valid: true };
+}
+
 // Check if a section has valid time data
-function isSectionValid(section: CourseSection): boolean {
-    const { times } = section;
-    // Must have at least one day and valid start/end times
-    return times.days.length > 0 &&
-        times.startTime !== undefined &&
-        times.endTime !== undefined &&
-        times.startTime !== times.endTime;
+function isSectionValid(section: CourseSection): { valid: boolean; error?: string } {
+    const timeslotCheck = isTimeslotValid(section.times);
+    if (!timeslotCheck.valid) {
+        return timeslotCheck;
+    }
+
+    // If has tutorial is checked, must have at least one tutorial
+    if (section.hasTutorial && (!section.tutorials || section.tutorials.length === 0)) {
+        return { valid: false, error: 'Please add at least one tutorial or uncheck "Has Tutorial/Lab".' };
+    }
+
+    // Validate all tutorials have valid timeslots
+    if (section.hasTutorial && section.tutorials) {
+        for (const tutorial of section.tutorials) {
+            const tutorialCheck = isTimeslotValid(tutorial.times);
+            if (!tutorialCheck.valid) {
+                return { valid: false, error: `Tutorial "${tutorial.name || 'Unnamed'}": ${tutorialCheck.error}` };
+            }
+        }
+    }
+
+    return { valid: true };
 }
 
 export function SectionList({ courseName, sections, onAddSection, onUpdateSection, onDeleteSection, lastAddedSectionId }: Props) {
@@ -40,16 +72,18 @@ export function SectionList({ courseName, sections, onAddSection, onUpdateSectio
     const handleUpdateSection = (sectionId: string, updated: CourseSection) => {
         // If trying to expand a different section, validate the current one first
         if (!updated.isCollapsed && sectionId !== effectiveExpandedId && currentExpandedSection) {
-            if (!isSectionValid(currentExpandedSection)) {
-                setValidationError('Please select a valid timeslot for the current section before editing another section.');
+            const validation = isSectionValid(currentExpandedSection);
+            if (!validation.valid) {
+                setValidationError(validation.error || 'Please complete the current section before editing another.');
                 return;
             }
         }
 
         // If trying to collapse (save) the current section, validate it first
         if (updated.isCollapsed && sectionId === effectiveExpandedId) {
-            if (!isSectionValid(updated)) {
-                setValidationError('Please select at least one day and set a valid time range before saving this section.');
+            const validation = isSectionValid(updated);
+            if (!validation.valid) {
+                setValidationError(validation.error || 'Please complete this section before saving.');
                 return;
             }
         }
