@@ -8,60 +8,44 @@ import { TimetableView } from './TimetableView';
 const STORAGE_KEY = 'timetable-builder-config';
 
 export function TimetableBuilder() {
-    // Load initial state from localStorage or use defaults (empty groups and default constraints)
-    const [groups, setGroups] = useState<CourseGroup[]>(() => {
-        if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    return parsed.groups || [];
-                } catch (e) {
-                    console.error('Error loading saved groups:', e);
-                }
-            }
-        }
-        return [];
+    // Initialize with defaults - load from localStorage after hydration
+    const [groups, setGroups] = useState<CourseGroup[]>([]);
+    const [globalConstraints, setGlobalConstraints] = useState<GlobalConstraints>({
+        minCourses: 1,
+        maxCourses: 5,
+        blockedTimeslots: []
     });
-
-    const [globalConstraints, setGlobalConstraints] = useState<GlobalConstraints>(() => {
-        if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    return parsed.globalConstraints || {
-                        minCourses: 1,
-                        maxCourses: 5,
-                        blockedTimeslots: []
-                    };
-                } catch (e) {
-                    console.error('Error loading saved constraints:', e);
-                }
-            }
-        }
-        return {
-            minCourses: 1,
-            maxCourses: 5,
-            blockedTimeslots: []
-        };
-    });
+    const [isHydrated, setIsHydrated] = useState(false);
 
     const [results, setResults] = useState<TimetableConfiguration[]>([]);
     const [lastAddedGroupId, setLastAddedGroupId] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [hasGenerated, setHasGenerated] = useState(false);
 
-    // Save to localStorage whenever groups or globalConstraints change
+    // Load from localStorage AFTER hydration to avoid mismatch
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const config = {
-                groups,
-                globalConstraints
-            };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (parsed.groups) setGroups(parsed.groups);
+                if (parsed.globalConstraints) setGlobalConstraints(parsed.globalConstraints);
+            } catch (e) {
+                console.error('Error loading saved config:', e);
+            }
         }
-    }, [groups, globalConstraints]);
+        setIsHydrated(true);
+    }, []);
+
+    // Save to localStorage whenever groups or globalConstraints change (but only after hydration)
+    useEffect(() => {
+        if (!isHydrated) return;
+        const config = {
+            groups,
+            globalConstraints
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    }, [groups, globalConstraints, isHydrated]);
 
     const handleAddGroup = () => {
         const newGroup: CourseGroup = {
