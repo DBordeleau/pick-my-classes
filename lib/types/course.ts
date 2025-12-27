@@ -45,7 +45,7 @@ export interface BlockedTimeslot {
 export interface GlobalConstraints {
     minCourses?: number;
     maxCourses?: number;
-    blockedTimeslots?: BlockedTimeslot[]; // Changed from blockedDays
+    blockedTimeslots?: BlockedTimeslot[];
 }
 
 export interface CourseShape {
