@@ -72,11 +72,14 @@ export function TimetableBuilder() {
         setHasGenerated(false);
 
         // Allow UI to update before calling generateTimetables
-        setTimeout(() => {
+        setTimeout(async () => {
             try {
                 const input: TimetableInput = { groups, globalConstraints };
                 const timetables = generateTimetables(input);
                 setResults(timetables);
+
+                // Track generation count (fire and forget - don't block on this)
+                fetch('/api/track-generation', { method: 'POST' }).catch(() => { });
             } catch (error) {
                 console.error('Error generating timetables:', error);
                 setResults([]);
