@@ -193,7 +193,7 @@ export function TimetableView({ timetables }: Props) {
             </div>
 
             <div className="course-list">
-                <h3>Selected Courses ({Array.from(currentTimetable.courses.values()).filter(c => c !== null).length})</h3>
+                <h3>Selected Sections ({Array.from(currentTimetable.courses.values()).filter(c => c !== null).length})</h3>
                 <ul>
                     {Array.from(currentTimetable.courses.values())
                         .filter(c => c !== null)
