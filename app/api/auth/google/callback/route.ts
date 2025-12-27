@@ -18,13 +18,6 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Debug: Log what we're sending
-        console.log('Token exchange params:', {
-            client_id: GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.slice(0, 10)}...` : 'MISSING',
-            client_secret: GOOGLE_CLIENT_SECRET ? `${GOOGLE_CLIENT_SECRET.slice(0, 10)}...` : 'MISSING',
-            redirect_uri: GOOGLE_REDIRECT_URI,
-        });
-
         // Exchange code for tokens
         const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
             method: 'POST',

@@ -174,6 +174,7 @@ export function TimetableView({ timetables }: Props) {
                     })),
                     termStart,
                     termEnd,
+                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 }),
             });
 

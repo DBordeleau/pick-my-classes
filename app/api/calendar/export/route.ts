@@ -13,6 +13,7 @@ interface ExportRequest {
     events: CalendarEvent[];
     termStart: string; // ISO date string
     termEnd: string; // ISO date string
+    timeZone: string; // Client's timezone (e.g., 'America/New_York')
 }
 
 // Map day names to RRULE BYDAY values
@@ -72,11 +73,14 @@ function getFirstOccurrence(termStart: string, day: string): string {
 export async function POST(request: NextRequest) {
     try {
         const body: ExportRequest = await request.json();
-        const { accessToken, events, termStart, termEnd } = body;
+        const { accessToken, events, termStart, termEnd, timeZone } = body;
 
         if (!accessToken || !events || !termStart || !termEnd) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
+
+        // Use client timezone, fallback to UTC if not provided
+        const clientTimeZone = timeZone || 'UTC';
 
         // Format term end date for RRULE (YYYYMMDD format)
         const termEndDate = new Date(termEnd);
@@ -101,11 +105,11 @@ export async function POST(request: NextRequest) {
                 summary: eventTitle,
                 start: {
                     dateTime: `${firstDate}T${minutesToTimeString(event.startTime)}`,
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    timeZone: clientTimeZone,
                 },
                 end: {
                     dateTime: `${firstDate}T${minutesToTimeString(event.endTime)}`,
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    timeZone: clientTimeZone,
                 },
                 recurrence: [
                     `RRULE:FREQ=WEEKLY;BYDAY=${rRuleDay};UNTIL=${untilDate}T235959Z`
