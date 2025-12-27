@@ -80,17 +80,19 @@ export function CourseCard({ course, onUpdate, onDelete, autoFocus = false }: Pr
     if (course.isCollapsed) {
         return (
             <div className="course-card course-card-collapsed">
-                <div className="course-header">
-                    <h3 style={{ margin: 0, fontWeight: 600 }}>
-                        {course.name || 'Unnamed Course'}
-                        {course.required && <span style={{ color: '#ef4444', marginLeft: '0.5rem' }}>*</span>}
-                    </h3>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                <div className="course-header-collapsed">
+                    <div className="course-collapsed-info">
+                        <span className="course-collapsed-name">
+                            {course.name || 'Unnamed Course'}
+                            {course.required && <span className="course-required-badge">Required</span>}
+                        </span>
+                        <span className="course-collapsed-sections">
                             {course.sections?.length || 0} section{course.sections?.length !== 1 ? 's' : ''}
                         </span>
-                        <button onClick={() => onUpdate({ ...course, isCollapsed: false })} className="edit-btn">Edit</button>
-                        <button onClick={onDelete} className="delete-btn">Delete</button>
+                    </div>
+                    <div className="course-collapsed-actions">
+                        <button onClick={() => onUpdate({ ...course, isCollapsed: false })} className="edit-btn-small">Edit</button>
+                        <button onClick={onDelete} className="delete-btn-small">×</button>
                     </div>
                 </div>
             </div>

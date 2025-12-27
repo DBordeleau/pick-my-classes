@@ -746,17 +746,162 @@ body {
 /* Collapsed Card States */
 .section-card-collapsed,
 .course-card-collapsed {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
 }
 
 .section-card-collapsed {
-  background: #f3f4f6;
+  background: #f9fafb;
   border-left-color: #9ca3af;
+  border-left-width: 3px;
+  transition: all 0.15s ease;
+}
+
+.section-card-collapsed:hover {
+  background: #f3f4f6;
+  border-left-color: #6b7280;
+}
+
+.section-header-collapsed {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.section-collapsed-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.section-collapsed-name {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.section-collapsed-time {
+  font-size: 0.8rem;
+  color: #6b7280;
+  background: #e5e7eb;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.section-collapsed-tutorial {
+  font-size: 0.75rem;
+  color: #059669;
+  background: #d1fae5;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.section-collapsed-actions {
+  display: flex;
+  gap: 0.375rem;
+  flex-shrink: 0;
 }
 
 .course-card-collapsed {
   background: #f9fafb;
   border-left-color: #9ca3af;
+  padding: 0.75rem 1rem;
+}
+
+.course-card-collapsed:hover {
+  background: #f3f4f6;
+  border-left-color: #6b7280;
+}
+
+.course-header-collapsed {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.course-collapsed-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.course-collapsed-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.course-required-badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #dc2626;
+  background: #fee2e2;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.course-collapsed-sections {
+  font-size: 0.8rem;
+  color: #6b7280;
+  background: #e5e7eb;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.course-collapsed-actions {
+  display: flex;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+/* Card Actions (bottom of expanded cards) */
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Compact Save Button */
+.save-btn-compact {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1.25rem;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-btn-compact:hover {
+  background: #059669;
+}
+
+/* Section save button - orange */
+.section-card .save-btn-compact {
+  background: #f59e0b;
+}
+
+.section-card .save-btn-compact:hover {
+  background: #d97706;
 }
 
 /* Timetable View */

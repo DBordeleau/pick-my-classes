@@ -75,7 +75,18 @@ export function TimetableView({ timetables }: Props) {
     });
 
     const days: Day[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-    const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM to 9 PM
+    
+    // Calculate the latest end time from all blocks
+    const latestEndTime = blocks.reduce((max, block) => Math.max(max, block.endTime), 8 * 60);
+    // Convert to hour and add 1 hour buffer, minimum 8 AM start, cap at 9 PM
+    const latestHour = Math.min(Math.ceil(latestEndTime / 60) + 1, 21);
+    // Also find earliest start time
+    const earliestStartTime = blocks.length > 0 
+        ? blocks.reduce((min, block) => Math.min(min, block.startTime), 24 * 60)
+        : 8 * 60;
+    const earliestHour = Math.max(Math.floor(earliestStartTime / 60), 8);
+    
+    const hours = Array.from({ length: latestHour - earliestHour }, (_, i) => i + earliestHour);
 
     const formatTime = (hour: number): string => {
         if (hour === 12) return '12 PM';

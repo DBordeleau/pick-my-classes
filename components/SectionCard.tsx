@@ -68,7 +68,9 @@ export function SectionCard({ courseName, section, onUpdate, onDelete, autoFocus
     const formatTime = (minutes: number): string => {
         const h = Math.floor(minutes / 60);
         const m = minutes % 60;
-        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        const period = h >= 12 ? 'PM' : 'AM';
+        const displayHour = h > 12 ? h - 12 : h === 0 ? 12 : h;
+        return `${displayHour}:${String(m).padStart(2, '0')} ${period}`;
     };
 
     const sortDays = (days: Day[]): Day[] => {
@@ -76,45 +78,49 @@ export function SectionCard({ courseName, section, onUpdate, onDelete, autoFocus
         return [...days].sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
     };
 
-    const formatSectionInfo = (): string => {
+    const formatDaysCompact = (days: Day[]): string => {
+        if (days.length === 0) return 'No days';
+        const sorted = sortDays(days);
+        // Use abbreviated format for common patterns
+        if (sorted.length === 5 && sorted.join('') === 'MonTueWedThuFri') return 'Weekdays';
+        return sorted.join('/');
+    };
+
+    const formatSectionSummary = (): { time: string; tutorial: string | null } => {
         const times = section.times;
         const sortedDays = sortDays(times.days);
-        const daysStr = sortedDays.length > 0 ? sortedDays.join('/') : 'No days';
-        const timeStr = times.startTime !== undefined && times.endTime !== undefined
-            ? `${formatTime(times.startTime)}-${formatTime(times.endTime)}`
-            : 'No time';
+        const daysStr = formatDaysCompact(sortedDays);
+        const timeStr = times.startTime !== undefined && times.endTime !== undefined && times.startTime !== times.endTime
+            ? `${formatTime(times.startTime)} - ${formatTime(times.endTime)}`
+            : 'Time not set';
 
-        let info = `${daysStr} @ ${timeStr}`;
+        const timeInfo = `${daysStr}, ${timeStr}`;
 
+        let tutorialInfo: string | null = null;
         if (section.hasTutorial && section.tutorials.length > 0) {
-            const tutorial = section.tutorials[0];
-            const sortedTutDays = sortDays(tutorial.times.days);
-            const tutDays = sortedTutDays.length > 0 ? sortedTutDays.join('/') : 'No days';
-            const tutTime = tutorial.times.startTime !== undefined
-                ? formatTime(tutorial.times.startTime)
-                : 'No time';
-            info += ` - Tutorial: ${tutDays} @ ${tutTime}`;
-        } else {
-            info += ' - No tutorial';
+            const tutCount = section.tutorials.length;
+            tutorialInfo = `${tutCount} tutorial${tutCount > 1 ? 's' : ''}`;
         }
 
-        return info;
+        return { time: timeInfo, tutorial: tutorialInfo };
     };
 
     const displaySuffix = suffixInput;
     const sectionDisplayName = `${courseName}-${section.suffix ?? displaySuffix}`;
 
     if (section.isCollapsed) {
+        const summary = formatSectionSummary();
         return (
             <div className="section-card section-card-collapsed">
-                <div className="section-header">
-                    <div>
-                        <h4 style={{ margin: 0, fontWeight: 600, marginBottom: '0.25rem' }}>{sectionDisplayName}</h4>
-                        <p style={{ margin: 0, fontSize: '0.875rem', color: '#6b7280' }}>
-                            {formatSectionInfo()}
-                        </p>
+                <div className="section-header-collapsed">
+                    <div className="section-collapsed-info">
+                        <span className="section-collapsed-name">{sectionDisplayName}</span>
+                        <span className="section-collapsed-time">{summary.time}</span>
+                        {summary.tutorial && (
+                            <span className="section-collapsed-tutorial">{summary.tutorial}</span>
+                        )}
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div className="section-collapsed-actions">
                         <button onClick={() => onUpdate({ ...section, isCollapsed: false })} className="edit-btn-small">Edit</button>
                         <button onClick={onDelete} className="delete-btn-small">×</button>
                     </div>
