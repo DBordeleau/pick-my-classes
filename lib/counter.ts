@@ -1,7 +1,6 @@
 import { Redis } from '@upstash/redis';
 
-// Initialize Redis client - will use UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
-// These are automatically set when you add the Upstash integration in Vercel
+// Initialize Redis client 
 const redis = new Redis({
     url: process.env.UPSTASH_REDIS_REST_URL!,
     token: process.env.UPSTASH_REDIS_REST_TOKEN!,
