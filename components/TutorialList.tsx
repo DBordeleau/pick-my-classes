@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { TutorialSection } from '../lib/types/course';
 import { TimeslotEditor } from './TimeslotEditor';
 

@@ -165,7 +165,7 @@ describe('TimetableGenerator', () => {
             const uniqueConfigs = new Set(
                 results.map(result =>
                     Array.from(result.courses.entries())
-                        .filter(([_, c]) => c !== null)
+                        .filter(([, c]) => c !== null)
                         .map(([courseId, c]) => `${courseId}:${c.sectionId}:${c.tutorialId || 'none'}`)
                         .sort()
                         .join('|')

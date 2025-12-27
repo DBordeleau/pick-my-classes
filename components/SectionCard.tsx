@@ -34,11 +34,8 @@ export function SectionCard({ courseName, section, onUpdate, onDelete, autoFocus
     };
 
     // Local input state so the user can clear/backspace
+    // State resets automatically when section.id changes because parent uses key={section.id}
     const [suffixInput, setSuffixInput] = useState<string>(section.suffix ?? '');
-
-    useEffect(() => {
-        setSuffixInput(section.suffix ?? '');
-    }, [section.suffix, section.id]);
 
     useEffect(() => {
         if (autoFocus && suffixInputRef.current) {

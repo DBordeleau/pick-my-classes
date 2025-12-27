@@ -3,7 +3,7 @@
     Each valid timetable is a combination of selected course sections and their associated tutorials.
 */
 
-import { Course, TimetableInput, TimeSlot, CourseSection, TutorialSection } from './types/course';
+import { Course, TimetableInput, TimeSlot } from './types/course';
 
 // Represents a complete, valid timetable configuration
 export interface TimetableConfiguration {
@@ -124,7 +124,7 @@ export class TimetableGenerator {
         // Mark as processed but not selected by storing null
         if (!nextCourse.required) {
             const newSelectedCourses = new Map(selectedCourses);
-            newSelectedCourses.set(nextCourse.id, null as any);
+            newSelectedCourses.set(nextCourse.id, null as unknown as SelectedCourse);
             this.backtrack(selectedIds, newSelectedCourses, results);
         }
 

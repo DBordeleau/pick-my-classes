@@ -102,14 +102,6 @@ export function TimetableView({ timetables }: Props) {
         ) || null;
     };
 
-    const getBlockHeight = (block: TimetableBlock, hour: number): number => {
-        const hourStart = hour * 60;
-        const hourEnd = (hour + 1) * 60;
-        const blockStart = Math.max(block.startTime, hourStart);
-        const blockEnd = Math.min(block.endTime, hourEnd);
-        return ((blockEnd - blockStart) / 60) * 100; // percentage of hour
-    };
-
     const isBlockStart = (block: TimetableBlock, hour: number): boolean => {
         const hourStart = hour * 60;
         return block.startTime >= hourStart && block.startTime < hourStart + 60;

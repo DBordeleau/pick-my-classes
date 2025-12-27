@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CourseGroup } from '../lib/types/course';
 import { GroupCard } from './GroupCard';
 import { Tooltip } from './Tooltip';
