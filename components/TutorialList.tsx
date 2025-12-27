@@ -66,7 +66,7 @@ function TutorialCard({ tutorial, defaultName, index, onUpdate, onDelete, autoFo
                         color: 'black',
                         fontSize: '0.95rem',
                         textAlign: 'center',
-                        background: 'transparent',
+                        background: 'white',
                         border: '1px solid black',
                         borderRadius: 4,
                         padding: '2px 4px',
