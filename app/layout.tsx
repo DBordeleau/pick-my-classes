@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Student Timetable Generator",
+  title: "PickMyClasses - Student Timetable Generator",
   description: "Generate all possible timetables based on your needs.",
 };
 

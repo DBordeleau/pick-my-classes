@@ -92,8 +92,6 @@ export function TimetableBuilder() {
 
     return (
         <div className="timetable-builder">
-            <h1 className='text-center'>Timetable Generator</h1>
-
             <GlobalConstraintsPanel
                 constraints={globalConstraints}
                 onChange={setGlobalConstraints}
