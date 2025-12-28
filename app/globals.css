@@ -1057,7 +1057,8 @@ body {
 .time-cell {
   border-right: 1px solid #e5e7eb;
   border-bottom: 1px solid #e5e7eb;
-  min-height: 50px;
+  height: 60px;
+  min-height: 60px;
   position: relative;
   background: white;
 }

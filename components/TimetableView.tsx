@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { TimetableConfiguration } from '../lib/timetable_generator';
 import { Day } from '../lib/types/course';
@@ -7,6 +7,9 @@ import { RiArrowDropDownLine } from "react-icons/ri";
 
 interface Props {
     timetables: TimetableConfiguration[];
+    pendingExport?: boolean;
+    onPendingExportHandled?: () => void;
+    onBeforeOAuthRedirect?: () => void;
 }
 
 interface TimetableBlock {
@@ -83,7 +86,7 @@ function getCachedInitialState(): InitialAuthState {
     return cachedInitialState;
 }
 
-export function TimetableView({ timetables }: Props) {
+export function TimetableView({ timetables, pendingExport, onPendingExportHandled, onBeforeOAuthRedirect }: Props) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const timetableRef = useRef<HTMLDivElement>(null);
 
@@ -98,6 +101,14 @@ export function TimetableView({ timetables }: Props) {
     const [exportMessage, setExportMessage] = useState(() => getCachedInitialState().error || '');
     const [showExportDropdown, setShowExportDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Handle pending export after OAuth redirect
+    useEffect(() => {
+        if (pendingExport && googleTokens && googleTokens.expiresAt > Date.now()) {
+            setShowExportModal(true);
+            onPendingExportHandled?.();
+        }
+    }, [pendingExport, googleTokens, onPendingExportHandled]);
 
     // Close dropdown when clicking outside
     React.useEffect(() => {
@@ -130,6 +141,8 @@ export function TimetableView({ timetables }: Props) {
 
     const handleGoogleCalendarExport = () => {
         if (!googleTokens || googleTokens.expiresAt < Date.now()) {
+            // Save timetables before redirecting to OAuth
+            onBeforeOAuthRedirect?.();
             // Need to authenticate first
             window.location.href = '/api/auth/google';
             return;
@@ -283,6 +296,20 @@ export function TimetableView({ timetables }: Props) {
         const hourStart = hour * 60;
         const hourEnd = (hour + 1) * 60;
 
+        // First, prioritize blocks that START in this cell
+        // This fixes the case where block A ends at 11:30 and block B starts at 11:30
+        // Without this, block A would be found first and since it doesn't start here, nothing renders
+        const startingBlock = blocks.find(block =>
+            block.day === day &&
+            block.startTime >= hourStart &&
+            block.startTime < hourEnd
+        );
+
+        if (startingBlock) {
+            return startingBlock;
+        }
+
+        // If no block starts here, look for a block that spans this cell
         return blocks.find(block =>
             block.day === day &&
             block.startTime < hourEnd &&
@@ -439,13 +466,23 @@ export function TimetableView({ timetables }: Props) {
                                 const block = getBlockForCell(day, hour);
                                 const showContent = block && isBlockStart(block, hour);
 
+                                // Use consistent scale: 60px per hour (1px per minute)
+                                const PIXELS_PER_HOUR = 60;
+                                const hourStart = hour * 60;
+                                // Calculate the top offset based on how many minutes into the hour the block starts
+                                const topOffset = showContent ? ((block.startTime - hourStart) / 60) * PIXELS_PER_HOUR : 0;
+                                // Calculate height and subtract pixels to create visible gap between blocks
+                                const durationMinutes = showContent ? block.endTime - block.startTime : 0;
+                                const blockHeight = showContent ? (durationMinutes / 60) * PIXELS_PER_HOUR - 4 : 0;
+
                                 return (
                                     <div key={`${day}-${hour}`} className="time-cell">
                                         {showContent && (
                                             <div
                                                 className={`course-block ${block.type}`}
                                                 style={{
-                                                    height: `${((block.endTime - block.startTime) / 60) * 60}px`
+                                                    top: `${topOffset}px`,
+                                                    height: `${blockHeight}px`
                                                 }}
                                                 title={`${block.courseDisplayName} - ${block.type === 'tutorial' ? 'Tutorial' : 'Lecture'}\n${formatMinutesToTime(block.startTime)} - ${formatMinutesToTime(block.endTime)}`}
                                             >

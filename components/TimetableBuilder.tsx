@@ -6,6 +6,7 @@ import { generateTimetables, TimetableConfiguration } from '../lib/timetable_gen
 import { TimetableView } from './TimetableView';
 
 const STORAGE_KEY = 'timetable-builder-config';
+const PENDING_EXPORT_KEY = 'pending-calendar-export';
 
 export function TimetableBuilder() {
     // Initialize with defaults - load from localStorage after hydration
@@ -21,6 +22,7 @@ export function TimetableBuilder() {
     const [lastAddedGroupId, setLastAddedGroupId] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [hasGenerated, setHasGenerated] = useState(false);
+    const [pendingExport, setPendingExport] = useState(false);
 
     // Load from localStorage AFTER hydration to avoid mismatch
     useEffect(() => {
@@ -35,6 +37,27 @@ export function TimetableBuilder() {
             }
         }
         setIsHydrated(true);
+
+        // Check if we're returning from OAuth with pending export
+        const pendingExportData = sessionStorage.getItem(PENDING_EXPORT_KEY);
+        if (pendingExportData) {
+            try {
+                const { timetables } = JSON.parse(pendingExportData);
+                if (timetables && timetables.length > 0) {
+                    // Restore timetables - need to convert Map-like objects back to Maps
+                    const restoredTimetables = timetables.map((t: { courses: [string, unknown][] }) => ({
+                        ...t,
+                        courses: new Map(t.courses)
+                    }));
+                    setResults(restoredTimetables);
+                    setHasGenerated(true);
+                    setPendingExport(true);
+                }
+            } catch (e) {
+                console.error('Error restoring pending export:', e);
+            }
+            sessionStorage.removeItem(PENDING_EXPORT_KEY);
+        }
     }, []);
 
     // Save to localStorage whenever groups or globalConstraints change (but only after hydration)
@@ -131,7 +154,23 @@ export function TimetableBuilder() {
             )}
 
             {results.length > 0 && (
-                <TimetableView key={results.length} timetables={results} />
+                <TimetableView
+                    key={results.length}
+                    timetables={results}
+                    pendingExport={pendingExport}
+                    onPendingExportHandled={() => setPendingExport(false)}
+                    onBeforeOAuthRedirect={() => {
+                        // Save timetables to sessionStorage before OAuth redirect
+                        // Convert Maps to arrays for JSON serialization
+                        const serializableTimetables = results.map(t => ({
+                            ...t,
+                            courses: Array.from(t.courses.entries())
+                        }));
+                        sessionStorage.setItem(PENDING_EXPORT_KEY, JSON.stringify({
+                            timetables: serializableTimetables
+                        }));
+                    }}
+                />
             )}
         </div>
     );
