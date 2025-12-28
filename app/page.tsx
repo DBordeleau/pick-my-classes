@@ -27,12 +27,12 @@ export default function Home() {
                 d="M9 5l7 7-7 7"
               />
             </svg>
-            What is this app for?
+            What does this app do?
           </button>
           {isExpanded && (
             <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
               <p className="mb-2">
-                <strong>PickMyClasses</strong> is a timetable generator helps you quickly
+                <strong>PickMyClasses</strong> is a timetable generator that helps you quickly
                 discover all valid class combinations based on your
                 constraints.
               </p>
