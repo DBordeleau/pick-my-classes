@@ -473,7 +473,7 @@ export function TimetableView({ timetables, pendingExport, onPendingExportHandle
                                 const topOffset = showContent ? ((block.startTime - hourStart) / 60) * PIXELS_PER_HOUR : 0;
                                 // Calculate height and subtract pixels to create visible gap between blocks
                                 const durationMinutes = showContent ? block.endTime - block.startTime : 0;
-                                const blockHeight = showContent ? (durationMinutes / 60) * PIXELS_PER_HOUR - 4 : 0;
+                                const blockHeight = showContent ? (durationMinutes / 60) * PIXELS_PER_HOUR : 0;
 
                                 return (
                                     <div key={`${day}-${hour}`} className="time-cell">

@@ -1072,7 +1072,7 @@ body {
   top: 0;
   left: 2px;
   right: 2px;
-  padding: 0.5rem;
+  padding: 0.4rem;
   border-radius: 4px;
   font-size: 0.875rem;
   overflow: hidden;
@@ -1101,7 +1101,7 @@ body {
 
 .course-block .course-name {
   font-weight: 700;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0rem;
   font-size: 0.875rem;
 }
 
